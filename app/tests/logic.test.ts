@@ -82,7 +82,9 @@ test('scoring formulas', () => {
   assert.deepEqual([starsFor(95), starsFor(75), starsFor(55), starsFor(30)], [3, 2, 1, 0]);
   assert.equal(matchScore(3), 70);
   assert.equal(matchScore(20), 0);
-  assert.equal(quickScore(5, 5), 50);
+  assert.equal(quickScore(5, 5), 100);
+  assert.equal(quickScore(2, 2), 40);
+  assert.equal(quickScore(4, 8), 50);
   assert.equal(quickScore(12, 12), 100);
   assert.equal(quickScore(0, 0), 0);
   assert.equal(speakItemScore(80, null), 80);

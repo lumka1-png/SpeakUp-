@@ -20,9 +20,9 @@ export function lessonScore(s: Partial<Scores>): number {
 export const starsFor = (score: number) => (score >= 90 ? 3 : score >= 70 ? 2 : score >= 50 ? 1 : 0);
 export const xpFor = (score: number, wordCount: number) => score + wordCount * 5;
 export const matchScore = (mistakes: number) => Math.max(0, 100 - mistakes * 10);
-/** Quick Think: accuracy, scaled down when fewer than 10 answers were given. */
+/** Quick Think (20 seconds): accuracy, scaled down when fewer than 5 answers were given. */
 export const quickScore = (correct: number, attempts: number) =>
-  attempts ? Math.round((correct / attempts) * 100 * Math.min(1, attempts / 10)) : 0;
+  attempts ? Math.round((correct / attempts) * 100 * Math.min(1, attempts / 5)) : 0;
 /**
  * One speaking item: 60% grammar + 40% pronunciation when recorded, grammar only when typed.
  * A sentence that uses the word with the wrong meaning scores at most 40, however good the grammar.

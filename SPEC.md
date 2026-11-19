@@ -36,7 +36,7 @@
 2. **Vocabulary:** choose 5 words at the learner's level. They move from the list into **My Words**. Then play 3 games:
    * Game 1: Traditional Chinese meaning (multiple choice)
    * Game 2: Match the meaning (tap to pair, 1 round of 5)
-   * Game 3: Quick Think (45-second true or false sprint with combos)
+   * Game 3: Quick Think (20-second true or false sprint with combos)
 3. **Speaking:** record one short sentence per word. Get feedback on meaning, grammar, and pronunciation.
 4. **Listening:** a roughly 5-minute two-host talk show on the lesson topic with the words hidden in natural conversation, then a 5-question quiz.
 
