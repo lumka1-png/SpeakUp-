@@ -88,7 +88,8 @@ function webSpeak(text: string, voiceId: string | undefined, rate: number, pitch
   const u = new SpeechSynthesisUtterance(text);
   const voice = voiceId ? synth.getVoices().find((v) => v.voiceURI === voiceId) : undefined;
   if (voice) u.voice = voice;
-  u.lang = voice?.lang ?? 'en-US';
+  // Android reports codes like en_US; speech needs the standard form en-US.
+  u.lang = (voice?.lang ?? 'en-US').replace('_', '-');
   u.rate = rate;
   u.pitch = pitch;
   let started = false;
@@ -125,6 +126,86 @@ function webSpeak(text: string, voiceId: string | undefined, rate: number, pitch
   // Chrome on Android can drop speech that starts right after cancel(), so wait a moment.
   const wait = 300 - (Date.now() - lastCancel);
   if (wait > 0) setTimeout(go, wait); else go();
+}
+
+/* ---------------- Sound check (diagnostics for learners and testers) ---------------- */
+
+export interface SpeechInfo {
+  supported: boolean;
+  /** Inside an app's built-in browser (Android WebView), where speech usually does not work. */
+  inAppBrowser: boolean;
+  voices: number;
+  englishVoices: string[];
+  mia?: string;
+  leo?: string;
+  broken: string[];
+  browser: string;
+}
+
+export function speechInfo(): SpeechInfo {
+  const web = Platform.OS === 'web' && typeof window !== 'undefined';
+  const synth = web && 'speechSynthesis' in window ? window.speechSynthesis : null;
+  const all = synth ? synth.getVoices() : [];
+  const ua = web ? navigator.userAgent : Platform.OS;
+  return {
+    supported: Platform.OS !== 'web' || !!synth,
+    inAppBrowser: web && /; wv\)|FBAN|FBAV|Instagram|Line\//.test(ua),
+    voices: all.length,
+    englishVoices: all.filter((v) => /^en[-_]/i.test(v.lang)).map((v) => `${v.name} (${v.lang})`),
+    mia: voiceMap?.Mia,
+    leo: voiceMap?.Leo,
+    broken: [...brokenVoices],
+    browser: ua,
+  };
+}
+
+/**
+ * Speaks one test sentence and reports every event the browser sends, so a tester can tell us
+ * exactly what happens on their phone. `voice` undefined means the browser's default voice.
+ */
+export function testSpeech(voice: string | undefined, log: (line: string) => void): void {
+  const t0 = Date.now();
+  const at = () => `${((Date.now() - t0) / 1000).toFixed(1)}s`;
+  if (Platform.OS !== 'web') {
+    Speech.speak('This is a sound check.', { language: 'en-US', voice, onStart: () => log(`${at()} started`), onDone: () => log(`${at()} finished`), onError: (e) => log(`${at()} error: ${e.message}`) });
+    return;
+  }
+  const synth = typeof window !== 'undefined' && 'speechSynthesis' in window ? window.speechSynthesis : null;
+  if (!synth) { log('This browser has no speech support.'); return; }
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance('This is a sound check. Can you hear me?');
+  const v = voice ? synth.getVoices().find((x) => x.voiceURI === voice) : undefined;
+  if (v) u.voice = v;
+  u.lang = (v?.lang ?? 'en-US').replace('_', '-');
+  u.onstart = () => log(`${at()} started speaking`);
+  u.onend = () => log(`${at()} finished`);
+  u.onerror = (e) => log(`${at()} error: ${e.error}`);
+  playing.add(u);
+  log(`Testing ${v ? v.name : 'default voice'} (${u.lang})`);
+  // Speak right away, inside the tap, which Chrome on Android requires.
+  synth.speak(u);
+  setTimeout(() => log(`${at()} speaking=${synth.speaking} pending=${synth.pending}`), 1500);
+  setTimeout(() => { if (synth.speaking || synth.pending) log(`${at()} still going`); playing.delete(u); }, 6000);
+}
+
+/** Plays a short beep through Web Audio, to check that the phone's media volume works at all. */
+export function testBeep(log: (line: string) => void): void {
+  if (Platform.OS !== 'web' || typeof window === 'undefined') { log('Beep test is for the web version.'); return; }
+  const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctx) { log('This browser cannot play test sounds.'); return; }
+  try {
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = 660;
+    gain.gain.value = 0.2;
+    osc.connect(gain).connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.6);
+    log(`Beep played (audio ${ctx.state}). Did you hear it?`);
+  } catch (e) {
+    log(`Beep failed: ${(e as Error).message}`);
+  }
 }
 
 /* ---------------- Speech recognition ---------------- */

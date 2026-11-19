@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
-import { Button, Card, Chip, IconButton, Icon, Meter, Row, T } from '../../components/ui';
+import { SoundCheck } from '../../components/SoundCheck';
+import { Button, Card, Chip, IconButton, Icon, LinkButton, Meter, Row, T } from '../../components/ui';
 import { PODCAST_NAME } from '../../config';
 import { episodeSeconds, wordsInLine } from '../../lib/podcast';
 import { speak, stopSpeaking } from '../../lib/speech';
@@ -84,6 +85,7 @@ export default function Listen() {
   const [rate, setRate] = useState(1);
   const [showT, setShowT] = useState(false);
   const [audioFailed, setAudioFailed] = useState(false);
+  const [soundCheck, setSoundCheck] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const live = useRef({ idx: 0, playing: false, rate: 1 });
 
@@ -159,6 +161,7 @@ export default function Listen() {
           <T v="bodyBold" style={{ color: '#8A1C16' }}>{"The audio didn't play on this device."}</T>
           <T v="small" style={{ color: C.ink }}>Check that your volume is up and your phone is not on silent, then tap play again. If it still does not play, read along with the transcript below, or try another browser such as Chrome or Edge.</T>
           <T v="zh" muted style={{ fontSize: 13.5 }}>無法播放聲音。請確認音量已打開、手機沒有靜音，再按一次播放。如果還是沒有聲音，可以先看下方的逐字稿。</T>
+          <Button small kind="secondary" title="Run a sound check" icon="vol" onPress={() => setSoundCheck(true)} style={{ marginTop: 6 }} />
         </View>
       )}
       <Card style={{ gap: 8 }}>
@@ -189,6 +192,8 @@ export default function Listen() {
           {words.map((w) => <Chip key={w.id} text={w.w} on={heard.includes(w.id)} icon={heard.includes(w.id) ? 'check' : undefined} />)}
         </View>
       </View>
+      <LinkButton title="Can't hear anything? Run a sound check" icon="vol" onPress={() => setSoundCheck(true)} />
+      <SoundCheck visible={soundCheck} onClose={() => setSoundCheck(false)} />
       <Button kind="secondary" title={showT ? 'Hide transcript' : 'Show transcript'} onPress={() => setShowT(!showT)} />
       {showT && (
         <Card style={{ padding: 10, gap: 2 }}>
