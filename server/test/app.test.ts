@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { createApp } from '../src/app';
-import { AiUnavailable, cleanEpisode, type Ai } from '../src/claude';
+import { AiUnavailable, cleanEpisode, createClaudeAi, type Ai } from '../src/claude';
 import type { EpisodeOutput } from '../src/schemas';
 import { DailyLimiter, memoryReportStore } from '../src/store';
 
@@ -34,6 +34,21 @@ test('daily limits return 429', async () => {
 test('AI problems become 422 so the app falls back to offline mode', async () => {
   const app = createApp({ ai: fakeAi({ feedback: async () => { throw new AiUnavailable('refused'); } }), reports: memoryReportStore() });
   assert.equal((await post(app, '/v1/feedback', fb)).status, 422);
+});
+
+test('a missing API key becomes 422, not a server error', async () => {
+  const saved = { key: process.env.ANTHROPIC_API_KEY, token: process.env.ANTHROPIC_AUTH_TOKEN };
+  delete process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_AUTH_TOKEN;
+  try {
+    const app = createApp({ ai: createClaudeAi(), reports: memoryReportStore() });
+    const res = await post(app, '/v1/feedback', fb);
+    assert.equal(res.status, 422);
+    assert.deepEqual(await res.json(), { error: 'unavailable' });
+  } finally {
+    if (saved.key !== undefined) process.env.ANTHROPIC_API_KEY = saved.key;
+    if (saved.token !== undefined) process.env.ANTHROPIC_AUTH_TOKEN = saved.token;
+  }
 });
 
 test('reports are stored and exported as CSV for triage', async () => {

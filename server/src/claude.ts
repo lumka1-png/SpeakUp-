@@ -19,6 +19,8 @@ export function createClaudeAi(injected?: Anthropic): Ai {
   let client: Anthropic | undefined = injected;
   const getClient = () => {
     if (!client) {
+      // The SDK only checks credentials when a request is sent, so check here to report it as AiUnavailable.
+      if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_AUTH_TOKEN) throw new AiUnavailable('ANTHROPIC_API_KEY is not set');
       try { client = new Anthropic({ maxRetries: 2 }); } catch (e) { throw new AiUnavailable(`Claude client not configured: ${(e as Error).message}`); }
     }
     return client;
