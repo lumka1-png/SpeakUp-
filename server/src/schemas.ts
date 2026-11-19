@@ -19,6 +19,12 @@ export const EpisodeRequest = z.object({
 });
 export type EpisodeRequest = z.infer<typeof EpisodeRequest>;
 
+export const SpeechRequest = z.object({
+  speaker: z.enum(['Mia', 'Leo']),
+  text: z.string().trim().min(1).max(600),
+});
+export type SpeechRequest = z.infer<typeof SpeechRequest>;
+
 export const ReportRequest = z.object({
   wordId: z.string().min(1).max(60),
   word: z.string().min(1).max(60),

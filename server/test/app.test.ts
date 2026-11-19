@@ -5,6 +5,10 @@ import { createApp } from '../src/app';
 import { AiUnavailable, cleanEpisode, type Ai } from '../src/claude';
 import type { EpisodeOutput } from '../src/schemas';
 import { DailyLimiter, memoryReportStore } from '../src/store';
+import { createOpenAiTts } from '../src/tts';
+import { mkdtemp } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const ID = 'abc123-test';
 const fakeFeedback = { usedTargetWord: true, meaningCorrect: true, meaningExplanation: '', meaningExplanationZh: '', grammarScore: 90, issues: [], correctedSentence: 'Hi.', naturalVersion: 'Hi.', suspectedMispronunciations: [], encouragement: 'Nice!' };
@@ -56,4 +60,43 @@ test('episode cleanup rejects broken quizzes and missing words', () => {
   assert.equal(cleanEpisode(good, req).quiz.length, 4);
   assert.throws(() => cleanEpisode({ ...good, lines: lines.map((l) => ({ ...l, text: 'Hello there.' })) }, req), AiUnavailable);
   assert.throws(() => cleanEpisode({ ...good, quiz: [q('x'), q('y'), q('map')] }, req), AiUnavailable);
+});
+
+test('speech: makes each clip once, caches it, and serves the MP3', async () => {
+  process.env.SPEAKUP_OPENAI_KEY = 'test-key';
+  let calls = 0;
+  const fakeFetch = (async (_url: string, init: { body: string }) => {
+    calls++;
+    const body = JSON.parse(init.body);
+    assert.equal(body.voice, body.input.startsWith('Leo') ? 'cedar' : 'marin');
+    return new Response(new Uint8Array(2000).fill(7), { status: 200 });
+  }) as unknown as typeof fetch;
+  const tts = createOpenAiTts(await mkdtemp(join(tmpdir(), 'speakup-audio-')), fakeFetch);
+  const app = createApp({ ai: fakeAi(), reports: memoryReportStore(), tts });
+
+  assert.equal((await post(app, '/v1/speech', { speaker: 'Mia', text: '' })).status, 400);
+  assert.equal((await post(app, '/v1/speech', { speaker: 'Bob', text: 'Hi' })).status, 400);
+  const r1 = await (await post(app, '/v1/speech', { speaker: 'Mia', text: 'Mia says hello.' })).json() as { url: string };
+  const r2 = await (await post(app, '/v1/speech', { speaker: 'Mia', text: '  Mia says   hello. ' })).json() as { url: string };
+  assert.equal(r1.url, r2.url, 'same line gives the same clip');
+  assert.equal(calls, 1, 'a cached line is not paid for twice');
+  const mp3 = await app.request(r1.url);
+  assert.equal(mp3.status, 200);
+  assert.equal(mp3.headers.get('Content-Type'), 'audio/mpeg');
+  assert.equal((await mp3.arrayBuffer()).byteLength, 2000);
+  assert.equal((await app.request('/v1/audio/../../etc/passwd')).status, 404);
+  assert.equal((await app.request('/v1/audio/' + 'a'.repeat(64) + '.mp3')).status, 404);
+
+  // A new episode is voiced in the background, in order.
+  const lines = [{ speaker: 'Mia', text: 'Mia line one.' }, { speaker: 'Leo', text: 'Leo line two.' }] as const;
+  const epApp = createApp({ ai: fakeAi({ episode: async () => ({ title: 't', lines: [...lines], quiz: [] }) }), reports: memoryReportStore(), tts });
+  assert.equal((await post(epApp, '/v1/episode', { topic: 'Travel', level: 0, words: ['a', 'b', 'c', 'd'].map((w) => ({ w, pos: 'n.', def: 'x' })) })).status, 200);
+  await new Promise((r) => setTimeout(r, 50));
+  assert.equal(calls, 3);
+  delete process.env.SPEAKUP_OPENAI_KEY;
+});
+
+test('speech: without voices configured, the app is told to use device voices', async () => {
+  const app = createApp({ ai: fakeAi(), reports: memoryReportStore() });
+  assert.equal((await post(app, '/v1/speech', { speaker: 'Mia', text: 'Hello.' })).status, 503);
 });

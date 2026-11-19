@@ -9,6 +9,7 @@ import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
 
 import type { Host } from './podcast';
+import { stopLine } from './podcastAudio';
 import { type HostVoices, pickHostVoices } from './voices';
 
 let voiceMap: HostVoices | null = null;
@@ -67,6 +68,7 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
 
 export function stopSpeaking(): void {
   token++;
+  stopLine(); // natural voices (podcastAudio.ts)
   if (Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
     lastCancel = Date.now();
     window.speechSynthesis.cancel();

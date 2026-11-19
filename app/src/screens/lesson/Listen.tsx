@@ -9,6 +9,7 @@ import { speak, stopSpeaking } from '../../lib/speech';
 import { fmtTime, wordRe } from '../../lib/util';
 import { episodeWaitStart, playQuickEpisode, prefetchEpisode, useLesson } from '../../store/lesson';
 import { useProgress } from '../../store/progress';
+import { cloudVoices, playLine, prefetchLines } from '../../lib/podcastAudio';
 import type { Word } from '../../data/words';
 import { C, F } from '../../theme';
 import { Shell } from './Shell';
@@ -79,6 +80,8 @@ function EpisodeLoading({ words }: { words: Word[] }) {
 export default function Listen() {
   const { words, episode, episodeLoading, topic } = useLesson();
   const lessons = useProgress((p) => p.stats.lessons);
+  const installId = useProgress((p) => p.installId);
+  const [natural, setNatural] = useState(cloudVoices());
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -90,6 +93,8 @@ export default function Listen() {
   const live = useRef({ idx: 0, playing: false, rate: 1 });
 
   useEffect(() => { if (!episode && !episodeLoading) prefetchEpisode(); }, [episode, episodeLoading]);
+  // Get the first lines ready before the learner presses play.
+  useEffect(() => { if (episode) prefetchLines(episode.lines, 0, installId); }, [episode, installId]);
   useEffect(() => () => { live.current.playing = false; stopSpeaking(); }, []);
 
   const playRef = useRef<(i: number) => void>(() => {});
@@ -105,13 +110,22 @@ export default function Listen() {
     setIdx(i);
     const ids = wordsInLine(lines[i].t, words);
     if (ids.length) setHeard((h) => Array.from(new Set([...h, ...ids])));
-    speak(lines[i].t, {
+    const rate = (lines[i].slow ? 0.8 : 1) * live.current.rate;
+    const next = () => { if (live.current.playing && live.current.idx === i) playRef.current(i + 1); };
+    const deviceVoice = () => speak(lines[i].t, {
       host: lines[i].sp,
-      rate: (lines[i].slow ? 0.8 : 1) * live.current.rate,
-      onEnd: () => { if (live.current.playing && live.current.idx === i) playRef.current(i + 1); },
+      rate,
+      onEnd: next,
       // Speech could not play: stop and explain, instead of racing through every line in silence.
       onFail: () => { live.current.playing = false; setPlaying(false); setAudioFailed(true); setShowT(true); },
     });
+    if (cloudVoices()) {
+      // Natural voices from the server; the phone's own voice only if this line cannot play.
+      prefetchLines(lines, i + 1, installId);
+      playLine(lines[i].t, lines[i].sp, rate, installId, { onEnd: next, onFail: () => { setNatural(false); deviceVoice(); } });
+    } else {
+      deviceVoice();
+    }
   };
   useEffect(() => { playRef.current = playFrom; });
 
@@ -205,7 +219,7 @@ export default function Listen() {
           ))}
         </Card>
       )}
-      <T v="small" style={{ textAlign: 'center' }}>{episode.source === 'claude' ? 'Episode written by Claude for this lesson.' : 'Offline episode (template).'}{topic === 'mywords' ? ' Review lesson.' : ''}</T>
+      <T v="small" style={{ textAlign: 'center' }}>{episode.source === 'claude' ? 'Episode written by Claude for this lesson.' : 'Offline episode (template).'}{natural && cloudVoices() ? ' Natural voices by OpenAI.' : ' Read by your device.'}{topic === 'mywords' ? ' Review lesson.' : ''}</T>
     </Shell>
   );
 }

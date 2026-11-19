@@ -46,7 +46,12 @@ and Safari.
 
 ### Podcast voices
 
-The podcast is read aloud by the voices built into each device, and the app picks the
+With `SPEAKUP_OPENAI_KEY` set in `server/.env`, the server voices each podcast line with
+OpenAI's natural voices (Mia: Marin, Leo: Cedar). Clips are saved in `AUDIO_DIR` and reused, so
+a line is only paid for once (about US$0.05 to $0.08 per episode). Give the host a persistent
+disk for this folder.
+
+Without the key, or offline, the podcast is read aloud by the voices built into each device, and the app picks the
 most natural ones available (Microsoft "Natural" voices in Edge, Apple "Premium" and
 "Enhanced" voices, Google voices in Chrome and on Android). For the best sound:
 
@@ -87,12 +92,14 @@ Restart `npx expo start` after changing `.env`.
 
 * `POST /v1/feedback`: grammar and pronunciation feedback for one sentence
 * `POST /v1/episode`: a podcast script and 5 quiz questions for the lesson's words
+* `POST /v1/speech`: audio for one podcast line (OpenAI voices), returned as a URL to an MP3
+* `GET /v1/audio/<id>.mp3`: the saved audio clips
 * `POST /v1/report`: stores a beta tester's word report
 * `GET /admin/reports.csv`: reports grouped by word, most reported first
   (send `Authorization: Bearer YOUR_ADMIN_TOKEN`; opens in Excel or Google Sheets)
 
-Each install is limited per day (150 feedback checks, 12 episodes, 100 reports) to
-protect your API budget. Change `DEFAULT_LIMITS` in `server/src/app.ts`.
+Each install is limited per day (150 feedback checks, 12 episodes, 900 podcast lines,
+100 reports) to protect your API budget. Change `DEFAULT_LIMITS` in `server/src/app.ts`.
 
 The model defaults to `claude-haiku-5-5` (fast and low cost). For richer episodes, set
 `CLAUDE_MODEL=claude-opus-5-5` in `.env` (see SPEC.md, section 15). Episodes take
