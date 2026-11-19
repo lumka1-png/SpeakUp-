@@ -7,6 +7,9 @@ import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest
 /** The model is configurable so you can compare quality and cost (for example claude-haiku-5-5). */
 export const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-5-5';
 
+/** The Claude API key. SPEAKUP_CLAUDE_KEY is preferred (it does not clash with other tools that read ANTHROPIC_API_KEY). */
+export const apiKey = () => process.env.SPEAKUP_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY || '';
+
 /** Thrown when Claude declines or returns output that cannot be used. The app then uses its offline fallback. */
 export class AiUnavailable extends Error {}
 
@@ -19,7 +22,9 @@ export function createClaudeAi(injected?: Anthropic): Ai {
   let client: Anthropic | undefined = injected;
   const getClient = () => {
     if (!client) {
-      try { client = new Anthropic({ maxRetries: 2 }); } catch (e) { throw new AiUnavailable(`Claude client not configured: ${(e as Error).message}`); }
+      const key = apiKey();
+      if (!key) throw new AiUnavailable('no Claude API key (set SPEAKUP_CLAUDE_KEY)');
+      try { client = new Anthropic({ apiKey: key, maxRetries: 2 }); } catch (e) { throw new AiUnavailable(`Claude client not configured: ${(e as Error).message}`); }
     }
     return client;
   };

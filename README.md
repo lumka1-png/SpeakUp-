@@ -58,7 +58,7 @@ npm install
 cp .env.example .env
 ```
 
-Put your Claude API key in `.env` (`ANTHROPIC_API_KEY=...`), then:
+Put your Claude API key in `.env` (`SPEAKUP_CLAUDE_KEY=...`; `ANTHROPIC_API_KEY` also works), then:
 
 ```bash
 npm run dev
