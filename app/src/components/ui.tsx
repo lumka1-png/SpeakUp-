@@ -27,7 +27,13 @@ export function T({ v = 'body', muted, style, ...rest }: TextProps & { v?: Varia
 /* ---------------- Icons ---------------- */
 export function Icon({ name, size = 22, color = C.ink, stroke = 2.2 }: { name: IconName; size?: number; color?: string; stroke?: number }) {
   const xml = `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">${ICONS[name].replace('COLOR', color)}</svg>`;
-  return <SvgXml xml={xml} width={size} height={size} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
+  // Hide decorative icons from screen readers on the wrapping View: react-native-svg passes these props
+  // straight to the DOM <svg> on web, where React warns about them and they have no effect.
+  return (
+    <View style={{ width: size, height: size }} aria-hidden importantForAccessibility="no-hide-descendants">
+      <SvgXml xml={xml} width={size} height={size} />
+    </View>
+  );
 }
 export function Logo({ size = 34 }: { size?: number }) {
   const xml = `<svg viewBox="0 0 34 34"><path d="M7 3h20a5 5 0 0 1 5 5v12a5 5 0 0 1-5 5H15l-7 6v-6H7a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5z" fill="${C.coral}"/><path d="M10 13v3M14 10v9M18 8v13M22 11v7M26 13v3" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
