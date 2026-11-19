@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "SpeakUp!",
+    "slug": "speakup",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "speakup",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.speakup.app",
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF9F2",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.speakup.app"
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFF9F2",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "SpeakUp! uses the microphone so you can practice speaking English. 開口說英文需要使用麥克風，讓你練習說英文。",
+          "speechRecognitionPermission": "SpeakUp! turns your speech into text to give you feedback. Your audio stays on your device. 語音會在你的裝置上轉成文字，錄音不會上傳。",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ],
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

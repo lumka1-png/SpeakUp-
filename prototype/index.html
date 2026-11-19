@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SpeakUp! ESL app prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=Noto+Sans+TC:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1E2140;--muted:#575B76;--bg:#FFF9F2;--line:#EADFD1;--coral:#D24A22;--coral-d:#9E3415;--coral-t:#FDE7DF;--teal:#0E7C74;--teal-d:#075049;--teal-t:#DDF1EE;--sun:#FFC94A;--sun-t:#FFF3D1;--ok:#1E7A45;--ok-t:#DFF3E6;--bad:#B3261E;--bad-t:#FBE3E1;--violet:#5B4BC4}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Nunito,system-ui,-apple-system,sans-serif;color:var(--ink);background:#EDE3D6;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit}
+.zh{font-family:'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif}
+h1,h2,h3,.disp{font-family:Fredoka,Nunito,sans-serif;font-weight:600;margin:0;letter-spacing:-.01em}
+p{margin:0}
+.h1{font-size:28px;line-height:1.15}
+.h2{font-size:22px;line-height:1.2}
+.h3{font-size:17px}
+.small{font-size:13px}
+.block{display:block}
+.center{text-align:center;align-items:center}
+.stage{min-height:100vh;display:flex;gap:48px;align-items:center;justify-content:center;padding:28px}
+.phone{width:390px;height:844px;max-height:calc(100vh - 56px);background:var(--bg);border-radius:46px;box-shadow:0 0 0 10px #1E2140,0 30px 70px rgba(30,33,64,.35);overflow:hidden;position:relative;display:flex;flex-direction:column}
+#app{flex:1;display:flex;flex-direction:column;min-height:0;position:relative}
+.side{width:300px;font-size:15px;line-height:1.55;color:var(--muted)}
+.side h2{color:var(--ink);font-size:26px;margin-bottom:6px}
+.side h3{color:var(--ink);font-size:16px;margin:18px 0 6px}
+.side ul{padding-left:18px;margin:0}
+.side li{margin:5px 0}
+@media (max-width:860px){.side{display:none}}
+@media (max-width:520px){.stage{padding:0;display:block}.phone{width:100%;height:100vh;height:100dvh;max-height:none;border-radius:0;box-shadow:none}}
+.top{padding:20px 20px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.scroll{flex:1;overflow-y:auto;padding:6px 20px 28px;min-height:0}
+.foot{padding:12px 20px 18px;flex-shrink:0;background:var(--bg);border-top:2px solid var(--line)}
+.brand{display:flex;align-items:center;gap:8px;font-family:Fredoka;font-weight:700;font-size:22px}
+.spacer{flex:1}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:999px;background:#fff;border:2px solid var(--line);font-weight:800;font-size:14px;white-space:nowrap}
+.pill svg{width:16px;height:16px}
+.ic{width:22px;height:22px;flex-shrink:0}
+.btn{appearance:none;border:0;border-radius:16px;min-height:54px;padding:0 22px;font-weight:800;font-size:17px;background:var(--coral);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--coral-d);transition:transform .08s,box-shadow .08s;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center}
+.btn:active:not([disabled]){transform:translateY(3px);box-shadow:0 1px 0 var(--coral-d)}
+.btn.sec{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:0 4px 0 var(--line)}
+.btn.sec:active:not([disabled]){box-shadow:0 1px 0 var(--line)}
+.btn.teal{background:var(--teal);box-shadow:0 4px 0 var(--teal-d)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.block{width:100%}
+.btn.sm{min-height:44px;font-size:15px;padding:0 14px;border-radius:12px}
+.btn .ic{width:20px;height:20px}
+.link{background:none;border:0;color:var(--muted);font-weight:800;text-decoration:underline;cursor:pointer;min-height:44px;padding:0 8px}
+.iconbtn{width:44px;height:44px;border-radius:14px;border:2px solid var(--line);background:#fff;display:inline-grid;place-items:center;cursor:pointer;flex-shrink:0;color:var(--ink)}
+.iconbtn .ic{width:20px;height:20px}
+.card{background:#fff;border:2px solid var(--line);border-radius:22px;padding:18px}
+.eyebrow{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);margin:0 0 6px}
+.muted{color:var(--muted)}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;align-items:center;gap:10px}
+.fl{display:block;font-weight:800;font-size:14px;margin-bottom:6px}
+select,input[type=search],textarea{width:100%;font:inherit;font-size:16px;border:2px solid var(--line);border-radius:14px;background:#fff;padding:12px 14px;color:var(--ink);min-height:50px}
+textarea{resize:none;min-height:84px;line-height:1.4}
+select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid #2F6FEB;outline-offset:2px}
+.note{background:var(--sun-t);border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600;color:#5A3E00;line-height:1.45}
+.topicrow{display:flex;gap:12px;align-items:center}
+.tbadge{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;color:#fff;font-family:Fredoka;font-weight:700;font-size:18px;flex-shrink:0}
+.steps{display:grid;gap:10px;margin-top:10px}
+.stepc{display:flex;gap:12px;align-items:flex-start;background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px}
+.stepc .sic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.hist{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:2px solid var(--line);font-weight:700}
+.hist:last-child{border-bottom:0}
+/* tabs */
+.tabs{display:flex;background:#fff;border-top:2px solid var(--line);padding:6px 6px calc(8px + env(safe-area-inset-bottom));flex-shrink:0}
+.tab{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;color:var(--muted);padding:4px 0;cursor:pointer;min-height:52px;border-radius:12px}
+.tab[aria-current=page]{color:var(--coral)}
+.tabic{width:52px;height:30px;border-radius:999px;display:grid;place-items:center}
+.tab[aria-current=page] .tabic{background:var(--coral-t)}
+/* welcome */
+.hero{text-align:center;padding:10px 0 6px}
+.wtitle{font-size:44px;font-weight:700;margin-top:6px}
+.tag{font-family:Fredoka;font-weight:500;font-size:20px;color:var(--coral)}
+.lvlbtn{width:100%;text-align:left;border:2px solid var(--line);background:#fff;border-radius:18px;padding:14px 16px;cursor:pointer;display:flex;gap:14px;align-items:center;box-shadow:0 3px 0 var(--line)}
+.lvlbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--line)}
+.lvlbadge{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-family:Fredoka;font-weight:700;color:#fff;font-size:18px;flex-shrink:0}
+/* lesson header */
+.lprog{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg{display:flex;flex-direction:column;gap:4px}
+.seg .bar{height:10px;border-radius:999px;background:#EFE5D8;overflow:hidden}
+.seg .bar i{display:block;height:100%;background:var(--teal);border-radius:999px;transition:width .3s}
+.seg span{font-size:11px;font-weight:800;color:var(--muted);text-align:center}
+.seg.cur span{color:var(--ink)}
+/* word picking */
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.wlist{display:flex;flex-direction:column;gap:10px}
+.wrow{position:relative}
+.wcard{width:100%;text-align:left;background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px 62px 14px 52px;cursor:pointer;display:block;position:relative;transition:border-color .15s,background .15s}
+.wcard .tick{position:absolute;left:14px;top:17px;width:26px;height:26px;border-radius:8px;border:2px solid #CFC3B3;display:grid;place-items:center;color:transparent;background:#fff}
+.wcard .tick svg{width:16px;height:16px}
+.wcard.on{border-color:var(--teal);background:var(--teal-t)}
+.wcard.on .tick{background:var(--teal);border-color:var(--teal);color:#fff}
+.wcard[disabled]{opacity:.5;cursor:not-allowed}
+.wword{font-family:Fredoka;font-weight:600;font-size:20px}
+.pos{font-size:13px;font-weight:700;color:var(--muted);margin-left:6px;font-style:italic}
+.lv{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:6px;vertical-align:3px;background:var(--sun-t);color:#6B4A00}
+.wdef{display:block;font-size:14px;color:var(--muted);margin-top:3px;line-height:1.4}
+.wzh{display:block;font-size:15px;margin-top:4px;color:var(--ink)}
+.wrow .say{position:absolute;right:10px;top:50%;transform:translateY(-50%)}
+/* questions */
+.qcard{background:var(--ink);color:#fff;border-radius:24px;padding:28px 20px;text-align:center;position:relative}
+.qcard .big{font-family:Fredoka;font-weight:600;font-size:36px;line-height:1.1}
+.qcard .pos{color:#C9CBE0;margin:0}
+.qcard .iconbtn{position:absolute;right:12px;top:12px;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#fff}
+.opts{display:grid;gap:10px}
+.opt{width:100%;min-height:56px;border:2px solid var(--line);background:#fff;border-radius:16px;font-size:18px;font-weight:700;cursor:pointer;padding:10px 14px;box-shadow:0 3px 0 var(--line);text-align:center;line-height:1.3}
+.opt.en{font-size:17px}
+.opt.right{border-color:var(--ok);background:var(--ok-t);box-shadow:0 3px 0 var(--ok)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-t);box-shadow:0 3px 0 var(--bad)}
+.opt[disabled]{cursor:default}
+.fb{border-radius:16px;padding:12px 14px;font-weight:700;display:flex;gap:10px;align-items:flex-start;line-height:1.4}
+.fb .ic{margin-top:1px}
+.fb.good{background:var(--ok-t);color:#0F5530}
+.fb.bad{background:var(--bad-t);color:#8A1C16}
+.qnum{font-weight:800;color:var(--muted);font-size:14px}
+.quote{background:#fff;border:2px solid var(--line);border-left-width:2px;border-radius:16px;padding:14px 16px;font-size:17px;font-weight:700;line-height:1.45}
+/* match */
+.match{display:grid;grid-template-columns:1fr 1.45fr;gap:10px}
+.mcol{display:flex;flex-direction:column;gap:10px}
+.mi{min-height:68px;border:2px solid var(--line);background:#fff;border-radius:14px;padding:8px 10px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 3px 0 var(--line);text-align:left;line-height:1.3}
+.mi.w{font-family:Fredoka;font-size:17px;font-weight:600;text-align:center}
+.mi.sel{border-color:var(--teal);background:var(--teal-t);box-shadow:0 3px 0 var(--teal)}
+.mi.done{border-color:var(--ok);background:var(--ok-t);opacity:.6;box-shadow:none;cursor:default}
+.mi.bad{border-color:var(--bad);background:var(--bad-t);animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+/* quick think */
+.timer{height:14px;border-radius:999px;background:#F1E8DC;overflow:hidden}
+.timer i{display:block;height:100%;background:var(--sun);border-radius:999px}
+.qtcard{background:#fff;border:2px solid var(--line);border-radius:24px;padding:26px 18px;text-align:center;min-height:210px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.qtcard .big{font-family:Fredoka;font-weight:600;font-size:34px}
+.qtcard .means{font-weight:800;color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.qtcard .def{font-size:19px;font-weight:700;line-height:1.35}
+.qtcard.good{animation:pg .3s}
+.qtcard.bad{animation:pb .3s}
+@keyframes pg{0%{border-color:var(--ok);background:var(--ok-t)}}
+@keyframes pb{0%{border-color:var(--bad);background:var(--bad-t)}}
+.qbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn.yes{background:var(--ok);box-shadow:0 4px 0 #0F5530}
+.btn.no{background:var(--bad);box-shadow:0 4px 0 #7A1A14}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat3 div{background:#fff;border:2px solid var(--line);border-radius:14px;padding:8px;text-align:center}
+.stat3 b{display:block;font-family:Fredoka;font-size:22px}
+.stat3 span{font-size:12px;font-weight:800;color:var(--muted)}
+/* ring & results */
+.ringtxt{font-family:Fredoka;font-weight:700;font-size:34px;fill:var(--ink)}
+.stars{display:flex;justify-content:center;gap:8px}
+.stars svg{width:44px;height:44px}
+.brk .r{display:flex;justify-content:space-between;font-weight:800;font-size:14px;margin-bottom:5px}
+.meter{height:10px;border-radius:999px;background:#EFE5D8;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:999px;background:var(--coral)}
+.meter.t i{background:var(--teal)}
+.meter.v i{background:var(--violet)}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.confetti i{position:absolute;top:-24px;width:9px;height:14px;border-radius:2px;animation:fall 3s ease-in forwards}
+@keyframes fall{to{transform:translateY(900px) rotate(600deg);opacity:.15}}
+.pillrow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+/* speaking */
+.mic{width:96px;height:96px;border-radius:50%;border:0;background:var(--coral);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 5px 0 var(--coral-d);margin:4px auto 0}
+.mic .ic{width:40px;height:40px}
+.mic.rec{background:var(--bad);box-shadow:0 0 0 0 rgba(179,38,30,.45);animation:pulse 1.2s infinite}
+@keyframes pulse{to{box-shadow:0 0 0 22px rgba(179,38,30,0)}}
+.miclbl{text-align:center;font-weight:800;font-size:14px;color:var(--muted)}
+.scores2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sbox{border-radius:16px;padding:12px;text-align:center;background:var(--teal-t)}
+.sbox.p{background:var(--coral-t)}
+.sbox b{display:block;font-family:Fredoka;font-size:28px;line-height:1.1}
+.sbox span{font-size:12px;font-weight:800;color:var(--muted)}
+.issues{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.issues li{background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 12px;font-size:14px;font-weight:700;line-height:1.4}
+.issues li .zh{display:block;font-weight:500;color:var(--muted);margin-top:2px;font-size:13.5px}
+.corr{background:var(--ok-t);border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-weight:800;line-height:1.4;color:#0F5530}
+.corr p{flex:1}
+.tipk{display:inline-block;background:var(--ink);color:#fff;border-radius:8px;padding:1px 8px;font-size:12px;margin-right:6px}
+.preview{font-size:12.5px;color:var(--muted);text-align:center;font-weight:700}
+/* podcast */
+.cover{width:100%;border-radius:24px;background:var(--ink);position:relative;overflow:hidden;color:#fff;padding:20px;display:flex;flex-direction:column;justify-content:flex-end;min-height:180px;gap:2px}
+.cover .ep{font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--sun)}
+.cover .wave{position:absolute;right:20px;top:22px;display:flex;gap:6px;align-items:center;height:80px}
+.cover .wave i{width:8px;border-radius:8px;background:var(--sun);transform-origin:center}
+.cover .wave i:nth-child(even){background:var(--coral)}
+.cover.playing .wave i{animation:wv 1s ease-in-out infinite}
+.cover .wave i:nth-child(2){animation-delay:.15s}.cover .wave i:nth-child(3){animation-delay:.3s}.cover .wave i:nth-child(4){animation-delay:.45s}.cover .wave i:nth-child(5){animation-delay:.6s}.cover .wave i:nth-child(6){animation-delay:.75s}
+@keyframes wv{50%{transform:scaleY(.35)}}
+.pbar{height:8px;border-radius:999px;background:#EFE5D8;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--coral);border-radius:999px;transition:width .3s}
+.ptime{display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:var(--muted);margin-top:6px}
+.pctl{display:flex;align-items:center;justify-content:center;gap:22px;margin:8px 0 12px}
+.playbtn{width:72px;height:72px;border-radius:50%;border:0;background:var(--coral);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 0 var(--coral-d)}
+.playbtn .ic{width:30px;height:30px}
+.speeds{display:flex;gap:8px;justify-content:center}
+.spd{min-width:60px;min-height:44px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;cursor:pointer}
+.spd[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{padding:6px 12px;border-radius:999px;border:2px dashed #CFC3B3;font-weight:800;font-size:14px;color:var(--muted);background:#fff;display:inline-flex;align-items:center;gap:4px}
+.chip .ic{width:15px;height:15px}
+.chip.heard{border-style:solid;border-color:var(--teal);background:var(--teal-t);color:var(--teal-d)}
+.trans{display:flex;flex-direction:column;gap:2px}
+.tline{padding:8px 10px;border-radius:12px;font-size:15px;line-height:1.5}
+.tline b.sp{font-family:Fredoka;font-weight:600;margin-right:6px}
+.tline.mia b.sp{color:var(--coral)}
+.tline.leo b.sp{color:var(--teal)}
+.tline.cur{background:var(--sun-t)}
+.beta{font-family:Nunito;font-size:10px;font-weight:800;letter-spacing:.08em;background:var(--ink);color:#fff;border-radius:6px;padding:2px 6px;vertical-align:4px}
+.radio{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid var(--line);border-radius:14px;padding:10px 14px;min-height:50px;cursor:pointer;font-weight:700}
+.radio input{width:20px;height:20px;accent-color:var(--teal)}
+.tline mark{background:none;color:inherit;font-weight:800;text-decoration:underline;text-decoration-color:var(--sun);text-decoration-thickness:3px;text-underline-offset:2px}
+/* my words */
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);background:#fff;border:2px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.seg3 button{border:0;background:none;border-radius:10px;min-height:40px;font-weight:800;cursor:pointer;color:var(--muted)}
+.seg3 button[aria-pressed=true]{background:var(--ink);color:#fff}
+.mw{background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;gap:10px;align-items:flex-start}
+.mw .body{flex:1;min-width:0}
+.dots{display:inline-flex;gap:4px;vertical-align:2px;margin-left:6px}
+.dots i{width:9px;height:9px;border-radius:50%;background:#E5D9C8}
+.dots i.f{background:var(--teal)}
+.mwact{display:flex;flex-direction:column;gap:6px}
+.empty{text-align:center;padding:30px 10px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:#fff;border:2px solid var(--line);border-radius:18px;padding:14px}
+.tile b{display:block;font-family:Fredoka;font-size:30px;line-height:1.1}
+.tile span{font-size:13px;font-weight:800;color:var(--muted)}
+/* modal, toast */
+.modal{position:absolute;inset:0;background:rgba(30,33,64,.45);display:flex;align-items:flex-end;z-index:20}
+.sheet{background:var(--bg);width:100%;border-radius:26px 26px 0 0;padding:24px 20px calc(22px + env(safe-area-inset-bottom))}
+.toast{position:absolute;left:16px;right:16px;bottom:100px;background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-weight:700;font-size:14px;z-index:30;line-height:1.4;animation:tin .2s}
+@keyframes tin{from{opacity:0;transform:translateY(8px)}}
+.sidebtn{margin-top:14px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="phone"><div id="app"></div></div>
+  <aside class="side" aria-label="About this prototype">
+    <h2 class="disp">SpeakUp! prototype</h2>
+    <p>A clickable preview of the full lesson loop: pick 10 words, play 3 vocabulary games, speak, listen, and get your score.</p>
+    <h3>What works here</h3>
+    <ul>
+      <li>4 TOEIC levels and 8 themed lists (240 words with Traditional Chinese)</li>
+      <li>Word selection, My Words, and practice from saved words</li>
+      <li>All three games, the speaking step, the podcast, and the quiz</li>
+      <li>Scores, stars, XP, streaks, and word mastery, saved in this browser</li>
+      <li>Beta word reports: tap the flag to report a wrong translation, definition, or example</li>
+    </ul>
+    <h3>What is simulated</h3>
+    <ul>
+      <li>Speaking feedback is rule-based. The real app sends your sentence to Claude.</li>
+      <li>The podcast script comes from a template and plays with your browser's built-in voices. The real app has Claude write a new episode for each lesson.</li>
+      <li>This preview window may block the microphone. Type your sentence instead, or open the HTML file directly in Chrome or Safari to record.</li>
+    </ul>
+    <button class="btn sec sm sidebtn" data-act="askReset">Reset demo data</button>
+  </aside>
+</div>
+<script>
+'use strict';
+/* ---------------- Data ---------------- */
+const LEVELS=[
+ {name:'Beginner',cefr:'A1–A2',toeic:'below 550',badge:'A2',blurb:'Everyday words for work and daily life'},
+ {name:'Intermediate',cefr:'B1',toeic:'550–780',badge:'B1',blurb:'Common workplace and travel vocabulary'},
+ {name:'Advanced',cefr:'B2',toeic:'785–940',badge:'B2',blurb:'Professional words for meetings and reports'},
+ {name:'Expert',cefr:'C1+',toeic:'945+',badge:'C1',blurb:'Precise, high-level business English'}];
+const LVCOL=['#0E7C74','#5B4BC4','#D24A22','#1E2140'];
+
+const TOEIC=[[
+'schedule|n.|時間表；行程|a plan that shows when things will happen|Please check the schedule before you book the meeting room.',
+'deliver|v.|遞送；運送|to take something to a person or place|The store will deliver the new chairs on Friday.',
+'receipt|n.|收據|a paper that shows you paid for something|Keep the receipt in case you need to return the shoes.',
+'appointment|n.|預約；約會|a fixed time to meet someone|I have an appointment with the doctor at three o\'clock.',
+'available|adj.|有空的；可取得的|free to meet, or ready to use or buy|Is the manager available to talk this afternoon?',
+'customer|n.|顧客|a person who buys things from a store or company|The customer asked for a larger size.',
+'purchase|v.|購買|to buy something|We need to purchase more paper for the printer.',
+'department|n.|部門|one part of a large company or store|She works in the sales department.',
+'employee|n.|員工|a person who works for a company|Every new employee gets a name badge.',
+'package|n.|包裹|a box or parcel sent by mail|A package arrived for you this morning.',
+'discount|n.|折扣|a lower price than usual|Students get a ten percent discount on Mondays.',
+'reserve|v.|預訂；保留|to ask for a seat, table, or room to be kept for you|I would like to reserve a table for four people.',
+'repair|v.|修理|to fix something that is broken|The technician will repair the copy machine today.',
+'staff|n.|職員；全體員工|the people who work for an organization|The hotel staff were very friendly.',
+'confirm|v.|確認|to say that something is true or will happen|Please call to confirm your reservation.',
+'cancel|v.|取消|to say that a planned event will not happen|They had to cancel the flight because of the storm.',
+'directions|n.|路線指引；說明|information about how to get somewhere|Can you give me directions to the train station?',
+'invoice|n.|發票；請款單|a document that asks a customer to pay|The invoice must be paid by the end of the month.',
+'meeting|n.|會議|a time when people come together to talk|Our team meeting starts at nine.',
+'apply|v.|申請；應徵|to ask formally for a job or a place|He decided to apply for the job in marketing.'],[
+'agenda|n.|議程|a list of topics to discuss at a meeting|The first item on the agenda is the new budget.',
+'deadline|n.|截止期限|the latest time by which something must be done|The deadline for the report is next Tuesday.',
+'budget|n.|預算|a plan for how much money can be spent|We have a small budget for the office party.',
+'candidate|n.|候選人；應徵者|a person who is being considered for a job|The best candidate has five years of experience.',
+'contract|n.|合約|a written legal agreement|Please read the contract carefully before you sign it.',
+'estimate|n.|估價；估計|a guess of the cost, size, or value of something|The builder gave us an estimate for the new kitchen.',
+'inventory|n.|庫存；存貨清單|all the goods a business has in stock|We count our inventory at the end of every month.',
+'negotiate|v.|協商；談判|to discuss something to reach an agreement|We need to negotiate a better price with the supplier.',
+'postpone|v.|延期|to move an event to a later time|The client asked us to postpone the meeting until Friday.',
+'recruit|v.|招募|to find new people to join a company|The company plans to recruit twenty engineers this year.',
+'refund|n.|退款|money given back to a customer|You can get a full refund within thirty days.',
+'revenue|n.|營收；收入|the money a company earns from sales|Our revenue grew by fifteen percent last quarter.',
+'supervisor|n.|主管；監督者|a person who manages a group of workers|Ask your supervisor before you change the schedule.',
+'warranty|n.|保固；保證書|a promise to repair or replace a product|The laptop comes with a two-year warranty.',
+'expand|v.|擴大；擴展|to become or make something bigger|The bakery wants to expand into a second location.',
+'shipment|n.|貨運；一批貨物|a load of goods that is sent together|The shipment from Japan will arrive next week.',
+'proposal|n.|提案；建議書|a formal plan or suggestion|Our proposal was accepted by the board.',
+'attend|v.|出席；參加|to go to an event|All managers must attend the training session.',
+'maintenance|n.|維修保養|work done to keep something in good condition|The elevator is closed for maintenance today.',
+'reimburse|v.|報銷；償還|to pay back money someone has spent|The company will reimburse your travel costs.'],[
+'acquisition|n.|收購；取得|the act of buying another company|The acquisition made them the largest firm in the region.',
+'allocate|v.|分配；撥出|to give a share of something for a purpose|We will allocate more money to online advertising.',
+'compliance|n.|合規；遵守|following rules, laws, or standards|The audit checks our compliance with safety rules.',
+'comprehensive|adj.|全面的；綜合的|including everything that is needed|She wrote a comprehensive guide for new staff.',
+'consolidate|v.|整合；合併|to combine several things into one|We plan to consolidate our three offices into one building.',
+'discrepancy|n.|差異；不一致|a difference between things that should match|There is a discrepancy between the invoice and the order.',
+'expedite|v.|加速處理|to make a process happen faster|Can you expedite the delivery for an extra fee?',
+'fluctuate|v.|波動；起伏|to change often between higher and lower levels|Oil prices fluctuate from week to week.',
+'implement|v.|實施；執行|to put a plan or system into action|We will implement the new policy in January.',
+'incentive|n.|獎勵；誘因|something that encourages people to do more|Sales staff receive an incentive for every new client.',
+'liability|n.|責任；負債|legal responsibility for something, or a debt|The company accepted liability for the damage.',
+'mandatory|adj.|強制的；義務的|required by a rule; not optional|Safety training is mandatory for all workers.',
+'outsource|v.|外包|to pay another company to do some of your work|Many firms outsource their customer support.',
+'preliminary|adj.|初步的；預備的|coming before the main part; early|The preliminary results look very promising.',
+'procurement|n.|採購|the process of buying supplies for an organization|The procurement team compares prices from five suppliers.',
+'projection|n.|預測；推估|an estimate of a future amount|Our sales projection for next year is quite high.',
+'stakeholder|n.|利害關係人|a person with an interest in a business or project|We invited every stakeholder to review the plan.',
+'subsidiary|n.|子公司|a company owned by a larger company|The firm opened a subsidiary in Singapore.',
+'tentative|adj.|暫定的；試探性的|not yet certain or final|We have a tentative date for the launch event.',
+'viable|adj.|可行的|able to work successfully|Is this a viable plan for a small team?'],[
+'amortize|v.|攤銷；分期償還|to spread a cost or debt over a period of time|The company will amortize the software cost over five years.',
+'arbitration|n.|仲裁|settling a dispute with the help of a neutral judge|The two firms agreed to settle the dispute through arbitration.',
+'contingency|n.|應變；意外事件|a possible future event that you plan for|We set aside money for any contingency.',
+'curtail|v.|削減；縮短|to reduce or limit something|The board decided to curtail travel spending.',
+'delineate|v.|明確描述；劃定|to describe or mark something clearly and exactly|The contract delineates each partner\'s duties.',
+'due diligence|n.|盡職調查|careful research before a business decision|The investors did their due diligence before the deal.',
+'fiduciary|adj.|受託的；信託的|involving a legal duty to act in another person\'s best interest|Directors have a fiduciary duty to shareholders.',
+'impetus|n.|推動力；動力|a force that makes something happen faster|The new law gave fresh impetus to clean energy.',
+'indemnify|v.|賠償；保障|to promise to pay for someone\'s possible losses|The supplier agreed to indemnify us against any claims.',
+'leverage|v.|善用；發揮|to use something you have to gain an advantage|We can leverage our brand to enter new markets.',
+'mitigate|v.|減輕；緩和|to make something bad less serious|Insurance helps mitigate the risk of losses.',
+'precedent|n.|先例；前例|an earlier event used as an example for later ones|This ruling sets a precedent for future cases.',
+'prerogative|n.|特權；權限|a right that belongs to a particular person or group|Hiring decisions are the manager\'s prerogative.',
+'protracted|adj.|拖延的；曠日持久的|lasting longer than expected or needed|After protracted talks, they finally signed the deal.',
+'remuneration|n.|報酬；酬勞|payment for work or services|The remuneration package includes a yearly bonus.',
+'scrutinize|v.|仔細審查|to examine something very carefully|Auditors scrutinize every expense report.',
+'stipulate|v.|規定；明訂|to state a condition clearly in an agreement|The lease stipulates that pets are not allowed.',
+'streamline|v.|精簡；使更有效率|to make a process simpler and more efficient|We want to streamline the hiring process to save time.',
+'synergy|n.|綜效；協同作用|extra value created when two groups work together|The merger created synergy between the two sales teams.',
+'unprecedented|adj.|前所未有的|never having happened before|The company saw unprecedented growth this year.']];
+
+const THEMES={
+business:{name:'Business',color:'#0E7C74',words:[
+'profit|n.|利潤|money earned after costs are paid|The shop made a small profit in its first year.',
+'client|n.|客戶|a person or company that pays for a service|Our biggest client is a bank in Taipei.',
+'product|n.|產品|something that is made to be sold|This new product is popular with young people.',
+'goal|n.|目標|something you want to achieve|Our goal is to double our sales.',
+'brand|n.|品牌|the name and image of a company\'s products|Everyone knows that sports brand.',
+'strategy|n.|策略|a plan to reach a long-term goal|We need a new strategy to attract customers.',
+'competitor|n.|競爭對手|a company that sells similar things|Our main competitor lowered its prices.',
+'launch|v.|推出；發表|to make a new product available|They will launch the new phone in September.',
+'partnership|n.|合作關係|an agreement to work together|The partnership with the hotel chain brought new customers.',
+'market share|n.|市佔率|the part of total sales a company has|We want to grow our market share in Asia.',
+'merger|n.|合併|when two companies join to become one|The merger created a much larger airline.',
+'benchmark|n.|基準；標竿|a standard used to measure performance|Their customer service is the benchmark for the industry.',
+'scalable|adj.|可擴展的|able to grow easily|We need a scalable system that can support more users.',
+'forecast|n.|預測|a statement about what will probably happen|The sales forecast for next quarter looks strong.',
+'diversify|v.|多元化|to add different kinds of products or activities|The company decided to diversify into healthy snacks.',
+'monetize|v.|獲利化；變現|to earn money from something|The app plans to monetize its free users with ads.',
+'disruptive|adj.|顛覆性的|changing an industry in a big new way|Streaming was a disruptive technology for TV.',
+'conglomerate|n.|企業集團|a large company made of many different businesses|The conglomerate owns hotels, banks, and factories.',
+'divestiture|n.|撤資；出售資產|selling off part of a company|The divestiture of the shipping unit raised cash.',
+'value proposition|n.|價值主張|the main reason customers should choose you|Our value proposition is fast delivery at low prices.']},
+office:{name:'Office',color:'#5B4BC4',words:[
+'desk|n.|辦公桌|a table you work at|Please leave the documents on my desk.',
+'printer|n.|印表機|a machine that puts text or images on paper|The printer on the third floor is out of ink.',
+'email|n.|電子郵件|a message sent over the internet|I will send you an email with the details.',
+'folder|n.|資料夾|a cover or digital place for keeping files|Save the report in the shared folder.',
+'lunch break|n.|午休|a short time to rest and eat in the middle of the day|Let\'s talk about it during the lunch break.',
+'colleague|n.|同事|a person you work with|My colleague helped me finish the slides.',
+'memo|n.|備忘錄；公告|a short written message in an office|The memo says the office closes early on Friday.',
+'extension|n.|分機|an extra phone line inside an office|You can reach me at extension 204.',
+'workload|n.|工作量|the amount of work a person has to do|My workload is heavy this week.',
+'cubicle|n.|小隔間|a small work area with low walls|Her cubicle is next to the window.',
+'delegate|v.|委派；授權|to give part of your work to someone else|Good managers know how to delegate tasks.',
+'prioritize|v.|優先處理|to decide which tasks are most important|Let\'s prioritize the urgent orders first.',
+'minutes|n.|會議記錄|the written record of what was said at a meeting|Could you take the minutes at today\'s meeting?',
+'onboarding|n.|新人訓練；到職流程|the process of helping new employees start their job|Our onboarding takes about two weeks.',
+'telecommute|v.|遠距工作|to work from home using the internet|I telecommute on Mondays and Fridays.',
+'bureaucracy|n.|官僚體制；繁文縟節|a system with too many rules and steps|The bureaucracy slows down every decision.',
+'hierarchy|n.|階層制度|a system where people have higher or lower ranks|The company has a flat hierarchy with few managers.',
+'ergonomic|adj.|符合人體工學的|designed to be comfortable and safe to use|The ergonomic chair helps my back.',
+'attrition|n.|人員流失|the loss of workers who leave and are not replaced|High attrition is a problem in our call center.',
+'micromanage|v.|微管理；管太細|to control every small detail of someone\'s work|Nobody likes a boss who tries to micromanage everything.']},
+travel:{name:'Travel',color:'#1F6FB2',words:[
+'passport|n.|護照|an official document for traveling to other countries|Don\'t forget your passport at the hotel.',
+'luggage|n.|行李|the bags you take on a trip|My luggage was too heavy for the small plane.',
+'ticket|n.|票|a paper or code that lets you travel or enter|I bought a train ticket to Kaohsiung.',
+'map|n.|地圖|a drawing that shows where places are|We used a map to find the old temple.',
+'hotel|n.|飯店；旅館|a building where travelers pay to stay|Our hotel is near the beach.',
+'itinerary|n.|行程表|a plan of a journey with places and times|The itinerary includes two days in Kyoto.',
+'boarding pass|n.|登機證|a card that lets you get on a plane|Please show your boarding pass at the gate.',
+'departure|n.|出發；離境|the act of leaving a place|Our departure time is 7:40 a.m.',
+'layover|n.|轉機停留|a short stop between two flights|We had a three-hour layover in Hong Kong.',
+'souvenir|n.|紀念品|something you buy to remember a place|I bought a small souvenir for my sister.',
+'accommodation|n.|住宿|a place to stay, such as a hotel|The price includes flights and accommodation.',
+'customs|n.|海關|the place at a border where bags are checked|We waited an hour to go through customs.',
+'jet lag|n.|時差不適|feeling tired after flying across time zones|I always have jet lag after flying to New York.',
+'excursion|n.|短程旅行；遠足|a short trip, usually for pleasure|We booked an excursion to the islands.',
+'destination|n.|目的地|the place you are traveling to|Bali is a popular destination for honeymoons.',
+'wanderlust|n.|旅遊癖；漫遊欲|a strong wish to travel|Her wanderlust took her to forty countries.',
+'off the beaten path|phr.|人跡罕至的地方|away from the places most tourists go|We found a quiet village off the beaten path.',
+'itinerant|adj.|巡迴的；流動的|traveling from place to place|He worked as an itinerant teacher for years.',
+'sojourn|n.|短暫停留|a short stay in a place|After a brief sojourn in Paris, they returned home.',
+'quarantine|n.|檢疫隔離|a period of being kept apart to stop disease|Travelers had to stay in quarantine for a week.']},
+shopping:{name:'Shopping',color:'#C2410C',words:[
+'cash|n.|現金|money in coins or paper notes|Do you take cash or only cards?',
+'cheap|adj.|便宜的|low in price|These socks are cheap but good quality.',
+'size|n.|尺寸|how big or small something is|Do you have this shirt in a smaller size?',
+'try on|phr.|試穿|to put on clothes to see if they fit|Can I try on these jeans?',
+'pay|v.|付款|to give money for something|You can pay at the counter.',
+'bargain|n.|划算的東西|something bought for less than its usual price|This jacket was a real bargain.',
+'exchange|v.|換貨；交換|to give something back and get something else|I\'d like to exchange these shoes for a bigger pair.',
+'checkout|n.|結帳處|the place in a store where you pay|There is a long line at the checkout.',
+'in stock|phr.|有庫存|available in the store now|Sorry, that color is not in stock.',
+'coupon|n.|優惠券|a ticket that gives you a lower price|Use this coupon to save fifty dollars.',
+'merchandise|n.|商品|goods that are bought and sold|All merchandise is twenty percent off this week.',
+'impulse buy|n.|衝動購物|something bought suddenly without planning|The candy was an impulse buy at the checkout.',
+'loyalty program|n.|會員集點計畫|a system that rewards regular customers|Join our loyalty program to earn points.',
+'markdown|n.|降價|a reduction in price|The markdown on winter coats starts tomorrow.',
+'consumer|n.|消費者|a person who buys goods or services|Consumers are spending more online.',
+'haggle|v.|討價還價|to argue about the price of something|Tourists often haggle at the night market.',
+'counterfeit|adj.|仿冒的|made to look real in order to trick people|The police seized counterfeit handbags.',
+'splurge|v.|揮霍；大手筆花錢|to spend a lot of money on something special|I like to splurge on a nice dinner once a month.',
+'premium|adj.|高級的；優質的|of high quality and higher price|The premium version includes free shipping.',
+'conspicuous consumption|n.|炫耀性消費|buying expensive things to show off wealth|Luxury cars are a form of conspicuous consumption.']},
+finance:{name:'Finance',color:'#2E7D32',words:[
+'save|v.|存錢；節省|to keep money to use later|I save a little money every month.',
+'spend|v.|花費|to use money to buy things|How much do you spend on food each week?',
+'bill|n.|帳單|a paper that shows how much you must pay|The electricity bill is higher this month.',
+'loan|n.|貸款；借款|money that you borrow and must pay back|She got a loan to start her business.',
+'account|n.|帳戶|an arrangement to keep money in a bank|I opened a savings account at the bank.',
+'interest|n.|利息|extra money paid for borrowing or saving money|This account pays two percent interest.',
+'deposit|n.|存款；押金|money put into a bank account, or paid first|I made a deposit of five thousand dollars.',
+'withdraw|v.|提款|to take money out of a bank account|I need to withdraw some cash from the ATM.',
+'balance|n.|餘額|the amount of money in an account|Please check your balance before you pay.',
+'tax|n.|稅|money people must pay to the government|Sales tax is included in the price.',
+'investment|n.|投資|money put into something to make a profit|Buying property can be a good investment.',
+'dividend|n.|股利|a share of profits paid to shareholders|The company pays a dividend twice a year.',
+'inflation|n.|通貨膨脹|a general rise in prices over time|Inflation makes everyday goods more expensive.',
+'mortgage|n.|房屋貸款|a loan used to buy a home|They will pay off their mortgage in twenty years.',
+'portfolio|n.|投資組合|a collection of investments|A good portfolio includes stocks and bonds.',
+'liquidity|n.|流動性|how easily assets can be turned into cash|Cash gives a business liquidity in hard times.',
+'collateral|n.|擔保品|property promised to a lender if a loan is not repaid|He used his house as collateral for the loan.',
+'depreciation|n.|折舊；貶值|a loss of value over time|Depreciation reduces the value of company cars.',
+'hedge|v.|避險|to reduce the risk of losing money|Investors hedge against currency changes.',
+'solvency|n.|償債能力|the ability to pay all your debts|The bank checks a company\'s solvency before lending.']},
+conversation:{name:'Conversation',color:'#B5446E',words:[
+'by the way|phr.|順便一提|used to add a new topic|By the way, are you free on Saturday?',
+'of course|phr.|當然|used to say yes politely and strongly|Of course you can borrow my pen.',
+'no worries|phr.|別擔心；沒關係|used to say that something is not a problem|No worries, I can wait a few minutes.',
+'catch up|phr.|敘舊；趕上|to talk with someone you have not seen for a while|Let\'s catch up over coffee next week.',
+'hang out|phr.|一起出去玩；閒晃|to spend time with friends in a relaxed way|We like to hang out at the park after school.',
+'actually|adv.|其實；實際上|used to give true or surprising information|Actually, I\'ve never been to Japan.',
+'sounds good|phr.|聽起來不錯|used to agree with a plan|Dinner at seven? Sounds good to me.',
+'make sense|phr.|有道理；合理|to be easy to understand or reasonable|Does this plan make sense to you?',
+'small talk|n.|閒聊|polite talk about easy topics like the weather|Small talk helps people feel comfortable at parties.',
+'keep in touch|phr.|保持聯絡|to continue to contact someone|Let\'s keep in touch after you move to Canada.',
+'to be honest|phr.|老實說|used before saying what you really think|To be honest, I didn\'t enjoy the movie.',
+'on second thought|phr.|轉念一想|used when you change your mind|On second thought, let\'s take a taxi.',
+'out of the blue|phr.|突然地；出乎意料|suddenly and without warning|My old friend called me out of the blue.',
+'beat around the bush|phr.|拐彎抹角|to avoid saying something directly|Please don\'t beat around the bush; just tell me the news.',
+'break the ice|phr.|打破僵局；破冰|to make people feel relaxed when they first meet|A funny game helped break the ice at the workshop.',
+'devil\'s advocate|n.|故意唱反調的人|a person who argues the other side to test an idea|Let me play devil\'s advocate for a moment.',
+'a grain of salt|phr.|半信半疑；別全信|used to say you should not completely believe something|Take his stories with a grain of salt; he exaggerates.',
+'the elephant in the room|phr.|大家都避而不談的問題|an obvious problem that nobody wants to talk about|The budget cut was the elephant in the room.',
+'beside the point|phr.|離題；無關緊要|not important to the main subject|The price is beside the point; we need quality.',
+'play it by ear|phr.|見機行事|to decide what to do as things happen|We don\'t have a plan yet, so let\'s play it by ear.']},
+movies:{name:'Movies',color:'#7A3FE0',words:[
+'actor|n.|演員|a person who performs in films or plays|My favorite actor is in this new film.',
+'scene|n.|場景；一幕|one part of a movie in one place and time|The last scene made everyone cry.',
+'movie theater|n.|電影院|a building where you watch films|Let\'s meet in front of the movie theater at eight.',
+'cartoon|n.|卡通|a film made with drawings|My little brother watches a cartoon every morning.',
+'scary|adj.|恐怖的；嚇人的|making you feel afraid|That movie was too scary for me.',
+'plot|n.|情節|the story of a film or book|The plot was hard to follow.',
+'director|n.|導演|the person who controls how a film is made|The director won an award for this film.',
+'sequel|n.|續集|a film that continues an earlier story|The sequel is even better than the first movie.',
+'subtitles|n.|字幕|words on the screen that translate what people say|I watch English movies with subtitles.',
+'trailer|n.|預告片|a short video that advertises a new film|The trailer made me excited to see the movie.',
+'cast|n.|演員陣容|all the actors in a film|The cast includes three famous stars.',
+'premiere|n.|首映|the first public showing of a film|Fans waited outside the premiere for hours.',
+'box office|n.|票房|the money a film earns from ticket sales|The film was a huge success at the box office.',
+'cinematography|n.|電影攝影技術|the art of filming and lighting a movie|The cinematography in this film is beautiful.',
+'spoiler|n.|劇透；爆雷|information that tells you what happens in a story|No spoilers, please! I haven\'t seen it yet.',
+'protagonist|n.|主角|the main character in a story|The protagonist is a young doctor in Taipei.',
+'denouement|n.|結局；收尾|the final part of a story where things are explained|The denouement answered all my questions.',
+'auteur|n.|作者導演|a director with a strong personal style|Critics call him a true auteur.',
+'verisimilitude|n.|逼真；真實感|the quality of seeming real|The film\'s verisimilitude makes it feel like a documentary.',
+'allegory|n.|寓言；諷喻|a story with a hidden moral or political meaning|The film is an allegory about power.']},
+music:{name:'Music',color:'#A23B72',words:[
+'song|n.|歌曲|a short piece of music with words|This song always makes me happy.',
+'singer|n.|歌手|a person who sings|She is my favorite singer.',
+'band|n.|樂團|a group of musicians who play together|My cousin plays drums in a band.',
+'guitar|n.|吉他|an instrument with six strings|I am learning to play the guitar.',
+'loud|adj.|大聲的|making a lot of noise|The music at the party was very loud.',
+'lyrics|n.|歌詞|the words of a song|I can\'t understand the lyrics of this song.',
+'album|n.|專輯|a collection of songs released together|Their new album comes out next month.',
+'concert|n.|演唱會；音樂會|a live music performance|We bought tickets for the concert in Taipei.',
+'chorus|n.|副歌；合唱|the part of a song that repeats|Everyone sang along to the chorus.',
+'rhythm|n.|節奏|a regular pattern of beats|This dance has a fast rhythm.',
+'genre|n.|類型；曲風|a style or type of music, film, or writing|Jazz is my favorite genre.',
+'acoustic|adj.|原聲的；不插電的|played without electric power|They played an acoustic version of the song.',
+'melody|n.|旋律|the main tune of a piece of music|The melody is simple but beautiful.',
+'harmony|n.|和聲；和諧|notes sung or played together that sound good|The singers sang in perfect harmony.',
+'encore|n.|安可曲|an extra song played after the show ends|The crowd shouted for an encore.',
+'virtuoso|n.|演奏大師；名家|a very skilled musician|She is a piano virtuoso.',
+'crescendo|n.|漸強；高潮|a gradual increase in loudness|The song builds to a powerful crescendo.',
+'cadence|n.|節拍；語調起伏|the rise and fall of a voice or music|Her speech had a gentle cadence.',
+'ensemble|n.|合奏團；樂團|a small group of musicians who perform together|The jazz ensemble played until midnight.',
+'improvise|v.|即興演奏；即興發揮|to create music or speech without preparing|Jazz musicians often improvise solos.']}};
+const THEME_IDS=Object.keys(THEMES);
+const COMING=['Health & Medicine','Food & Dining','Technology','Marketing','Human Resources','Customer Service','Real Estate & Housing','Transportation','Sports & Fitness','Education','Environment','Law & Contracts','Manufacturing','Hospitality','News & Media','Social Media','Job Interviews','Emotions & Personality','Daily Routines','Science'];
+
+const mk=(s,lvl,topic)=>{const [w,pos,zh,def,ex]=s.split('|');return {id:w.toLowerCase(),w,pos,zh,def,ex,lvl,topic};};
+function wordsOf(topic){
+  if(topic==='toeic') return TOEIC.flatMap((arr,l)=>arr.map(s=>mk(s,l,'toeic')));
+  return THEMES[topic].words.map((s,i)=>mk(s,Math.floor(i/5),topic));
+}
+const ALL=['toeic',...THEME_IDS].flatMap(wordsOf);
+
+/* ---------------- Helpers ---------------- */
+const $app=document.getElementById('app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const escRe=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pick=(a,n)=>shuffle(a).slice(0,n);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const wordRe=(w,flags='i')=>new RegExp('\\b'+escRe(w.w)+'\\w*',flags);
+const dayStr=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function topicName(id){return id==='toeic'?'TOEIC Essentials':id==='mywords'?'My Words review':id==='random'?'Random topic':(THEMES[id]?THEMES[id].name:id);}
+function topicColor(id){return id==='toeic'?'#1E2140':id==='mywords'?'#0E7C74':(THEMES[id]?THEMES[id].color:'#D24A22');}
+function badge(id){const t=id==='random'?'?':id==='toeic'?'T':id==='mywords'?'M':topicName(id)[0];return `<span class="tbadge" style="background:${id==='random'?'#575B76':topicColor(id)}" aria-hidden="true">${t}</span>`;}
+
+const ICONS={
+book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/><path d="M8 7h7"/>',
+bookmark:'<path d="M6 3h12v18l-6-4-6 4z"/>',
+user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/>',
+stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
+play:'<path d="M8 5l11 7-11 7z" fill="currentColor"/>',
+pause:'<path d="M8 5v14M16 5v14"/>',
+vol:'<path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>',
+check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+x:'<path d="M6 6l12 12M18 6L6 18"/>',
+right:'<path d="M5 12h14M13 6l6 6-6 6"/>',
+back:'<path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/>',
+fwd:'<path d="M13 6l6 6-6 6M5 6l6 6-6 6"/>',
+shuffle:'<path d="M3 7h4l10 10h4M3 17h4l3-3M14 10l3-3h4M18 4l3 3-3 3M18 14l3 3-3 3"/>',
+flame:'<path d="M12 3c1 4 6 6 6 11a6 6 0 0 1-12 0c0-3 2-4 2-7 2 1 3 3 3 5 1-2 1-6 1-9z"/>',
+bolt:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+headphones:'<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="5" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/>',
+trash:'<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/>',
+bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+trophy:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H4a4 4 0 0 0 4 4M16 6h4a4 4 0 0 1-4 4M12 13v4M8 21h8M9 17h6"/>'};
+const ic=(n,style='')=>`<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"${style?` style="${style}"`:''}>${ICONS[n]}</svg>`;
+const logo=(s=34)=>`<svg width="${s}" height="${s}" viewBox="0 0 34 34" aria-hidden="true"><path d="M7 3h20a5 5 0 0 1 5 5v12a5 5 0 0 1-5 5H15l-7 6v-6H7a5 5 0 0 1-5-5V8a5 5 0 0 1 5-5z" fill="#D24A22"/><path d="M10 13v3M14 10v9M18 8v13M22 11v7M26 13v3" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+const starSvg=on=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3-4.6-4.4 6.3-.9z" fill="${on?'#FFC94A':'#EADFD1'}" stroke="${on?'#C98A00':'#D6C9B6'}" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+function ring(p,size=150){const r=(size-18)/2,c=2*Math.PI*r,off=c*(1-p/100),h=size/2;return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Score ${p} percent"><circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="#EFE5D8" stroke-width="14"/><circle cx="${h}" cy="${h}" r="${r}" fill="none" stroke="${p>=70?'#0E7C74':p>=50?'#E0A100':'#D24A22'}" stroke-width="14" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}" transform="rotate(-90 ${h} ${h})"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" class="ringtxt">${p}%</text></svg>`;}
+function toast(msg){const ph=document.querySelector('.phone');if(!ph)return;const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;ph.appendChild(t);setTimeout(()=>t.remove(),3200);}
+function scrollToId(id){setTimeout(()=>{const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});},30);}
+
+/* ---------------- Storage ---------------- */
+const STORE_KEY='speakeasy.proto.v1';
+const DEF=()=>({onboarded:false,level:1,topic:'toeic',myWords:{},stats:{lessons:0,xp:0,streak:0,lastDay:null,best:0},history:[],reports:[]});
+function load(){try{const s=JSON.parse(localStorage.getItem(STORE_KEY));if(s&&typeof s==='object')return s;}catch(e){}return null;}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(S.p));}catch(e){}}
+const S={p:Object.assign(DEF(),load()||{}),route:'home',L:null,modal:null,wf:'all',wq:''};
+S.p.stats=Object.assign(DEF().stats,S.p.stats||{});if(!Array.isArray(S.p.reports))S.p.reports=[];
+let TIMER=null,REC=null;
+
+/* ---------------- Speech ---------------- */
+const TTS={ok:'speechSynthesis' in window,voices:[],map:null,
+ init(){if(!this.ok)return;const ld=()=>{try{this.voices=speechSynthesis.getVoices().filter(v=>/^en[-_]/i.test(v.lang));this.map=null;}catch(e){}};ld();try{speechSynthesis.onvoiceschanged=ld;}catch(e){}},
+ voiceFor(sp){const v=this.voices;if(!v.length)return null;if(!this.map){const us=v.filter(x=>/en[-_]US/i.test(x.lang));const pool=us.length?us:v;const f=pool.find(x=>/samantha|aria|jenny|zira|female|google us english|karen|moira|ava|allison/i.test(x.name))||pool[0];const m=v.find(x=>x!==f&&/daniel|alex|guy|david|fred|\bmale|uk english male|arthur|aaron|tom|rishi/i.test(x.name))||v.find(x=>x!==f)||f;this.map={Mia:f,Leo:m,same:f===m};}return this.map[sp];},
+ speak(text,o={}){if(!this.ok){o.onend&&o.onend();return;}try{const u=new SpeechSynthesisUtterance(text);u.lang='en-US';const v=this.voiceFor(o.sp||'Mia');if(v)u.voice=v;u.rate=o.rate||1;u.pitch=(this.map&&this.map.same)?(o.sp==='Leo'?.82:1.12):1;u.onend=()=>o.onend&&o.onend();u.onerror=()=>o.onend&&o.onend();speechSynthesis.speak(u);}catch(e){o.onend&&o.onend();}},
+ stop(){try{if(this.ok)speechSynthesis.cancel();}catch(e){}}};
+TTS.init();
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+function stopAll(){if(TIMER){clearInterval(TIMER);TIMER=null;}if(S.L&&S.L.pod){S.L.pod.playing=false;S.L.pod.token++;}TTS.stop();if(REC){try{REC.abort();}catch(e){}REC=null;}if(S.L&&S.L.sp)S.L.sp.rec=false;}
+
+/* ---------------- Lesson logic ---------------- */
+function getPool(level,topic){const mine=S.p.myWords;return wordsOf(topic).filter(w=>!mine[w.id]).sort((a,b)=>Math.abs(a.lvl-level)-Math.abs(b.lvl-level)||a.lvl-b.lvl);}
+function startLesson(words){
+  stopAll();
+  let topic=S.p.topic;
+  if(words) topic='mywords';
+  else if(topic==='random') topic=pick(['toeic',...THEME_IDS],1)[0];
+  S.L={topic,step:'pick',pool:words?[]:getPool(S.p.level,topic),sel:[],show:20,showZh:false,words:[],scores:{},pw:{},practice:!!words,random:S.p.topic==='random'};
+  S.route='lesson';
+  if(words){S.L.words=words;initG1();}
+  render();
+}
+function initPW(){S.L.pw={};S.L.words.forEach(w=>S.L.pw[w.id]={g1:false,g2m:0,sp:false});}
+function distractZh(w){const same=ALL.filter(x=>x.id!==w.id&&x.pos===w.pos&&x.zh!==w.zh);return pick(same.length>=3?same:ALL.filter(x=>x.id!==w.id),3).map(x=>x.zh);}
+function initG1(){initPW();S.L.g1={i:0,picked:null,correct:0,qs:shuffle(S.L.words).map(w=>({w,options:shuffle([w.zh,...distractZh(w)])}))};S.L.step='g1';}
+function initG2(){const ws=shuffle(S.L.words),rounds=[];for(let i=0;i<ws.length;i+=5)rounds.push(ws.slice(i,i+5));if(rounds.length>1&&rounds[rounds.length-1].length<2){rounds[rounds.length-2].push(...rounds.pop());}S.L.g2={rounds,r:0,left:shuffle(rounds[0]),right:shuffle(rounds[0]),selL:null,selR:null,done:[],bad:null,mistakes:0};S.L.step='g2';}
+function initG3(){S.L.g3={state:'ready',t:45,correct:0,attempts:0,streak:0,best:0,points:0,item:null,fx:null};S.L.step='g3';}
+function initSpeak(){S.L.sp={i:0,text:'',viaMic:false,edited:false,conf:null,rec:false,fb:null,idea:false,results:[]};S.L.step='speak';}
+function initListen(){S.L.pod={lines:buildPodcast(S.L.words,S.L.topic),idx:0,playing:false,rate:1,showT:!TTS.ok,token:0,heard:[],finished:false};S.L.step='listen';}
+function inter(o){S.L.inter=o;S.L.step='inter';}
+function msgFor(s){return s>=90?'Outstanding!':s>=75?'Great job!':s>=60?'Nice work!':'Good effort!';}
+
+function g3Next(){const g=S.L.g3,ws=S.L.words;const w=ws[Math.floor(Math.random()*ws.length)];const truth=Math.random()<.5||ws.length<2;const d=truth?w:pick(ws.filter(x=>x.id!==w.id),1)[0];g.item={w,d,truth,mode:Math.random()<.5?'def':'zh'};}
+function g3Tick(){const g=S.L&&S.L.g3;if(!g||g.state!=='run')return;g.t=Math.max(0,g.t-.1);const bar=document.querySelector('.timer i');if(bar)bar.style.width=(g.t/45*100)+'%';const tl=document.getElementById('tleft');if(tl)tl.textContent=Math.ceil(g.t)+'s';if(g.t<=0)g3End();}
+function g3End(){const g=S.L.g3;clearInterval(TIMER);TIMER=null;g.state='end';const acc=g.attempts?g.correct/g.attempts:0;const s=Math.round(acc*100*Math.min(1,g.attempts/10));S.L.scores.g3=s;const v=Math.round((S.L.scores.g1+S.L.scores.g2+s)/3);inter({title:'Vocabulary complete!',sub:`Quick Think: ${g.correct} correct out of ${g.attempts}, with a best combo of ${g.best}. Your vocabulary score for this lesson is ${v}%.`,score:s,p:.4,next:'speak',btn:'Next: Speaking',tip:'Now say each word out loud in your own sentence. Short and simple is perfect.'});render();}
+
+/* Grammar and pronunciation (prototype rules; the real app uses Claude) */
+const VERB3={go:'goes',have:'has',do:'does',want:'wants',like:'likes',need:'needs',work:'works',make:'makes',take:'takes',get:'gets',say:'says',think:'thinks',use:'uses',come:'comes',know:'knows',buy:'buys',try:'tries',study:'studies',watch:'watches',live:'lives',love:'loves',play:'plays',feel:'feels',see:'sees',eat:'eats',pay:'pays',plan:'plans',spend:'spends',save:'saves'};
+function usesWord(text,w){let stem=w.w.toLowerCase();if(stem.length>4&&!stem.includes(' '))stem=stem.replace(/(e|y)$/,'');return new RegExp('\\b'+escRe(stem),'i').test(text);}
+function analyze(text,w){
+  let s=text.trim().replace(/\s+/g,' ');if(!s)return null;const issues=[];const add=(msg,zh)=>issues.push({msg,zh});
+  s=s.replace(/\b(\w+)\s+\1\b/gi,(m,a)=>{add(`You repeated “${a}”.`,'注意不要重複同一個字。');return a;});
+  if(/\bi\b/.test(s)){s=s.replace(/\bi\b/g,'I');add('Always write “I” with a capital letter.','英文的「I（我）」永遠要大寫。');}
+  s=s.replace(/\bI\s+(is|are)\b/g,()=>{add('Use “am” after “I”.','「I」後面要用 am。');return 'I am';});
+  s=s.replace(/\b(he|she|it)\s+(are|am)\b/gi,(m,a)=>{add(`Use “is” after “${a.toLowerCase()}”.`,'he / she / it 後面要用 is。');return a+' is';});
+  s=s.replace(/\b(you|we|they)\s+(is|am)\b/gi,(m,a)=>{add(`Use “are” after “${a.toLowerCase()}”.`,'you / we / they 後面要用 are。');return a+' are';});
+  s=s.replace(/\b(he|she|it)\s+(\w+)\b/gi,(m,a,b)=>{const v=VERB3[b.toLowerCase()];if(v){add(`After “${a.toLowerCase()}”, use “${v}” in the present tense.`,'第三人稱單數（he / she / it）的現在式動詞要加 -s。');return a+' '+v;}return m;});
+  s=s.replace(/\b(want|wants|need|needs|plan|plans|hope|hopes|decide|decided|wanted|needed|planned)\s+(go|buy|eat|see|make|have|get|do|work|meet|try|visit|book|find|learn|study|talk|pay|use|save|spend)\b/gi,(m,a,b)=>{add(`Add “to” after “${a.toLowerCase()}”: “${a.toLowerCase()} to ${b}”.`,'want / need / plan 後面接動詞時，要加 to。');return `${a} to ${b}`;});
+  s=s.replace(/\b([Aa])\s+([aeiou]\w*)/gi,(m,a,b)=>{if(/^(uni|use|usu|uti|euro|one|once)/i.test(b))return m;add(`Use “an” before a vowel sound: “an ${b}”.`,'母音開頭的字前面要用 an。');return (a==='A'?'An':'an')+' '+b;});
+  s=s.replace(/\b([Aa])n\s+([bcdfgjklmnpqrstvwxyz]\w*)/gi,(m,a,b)=>{add(`Use “a” before a consonant sound: “a ${b}”.`,'子音開頭的字前面要用 a。');return a+' '+b;});
+  if(/^[a-z]/.test(s)){s=s[0].toUpperCase()+s.slice(1);add('Start your sentence with a capital letter.','句子開頭的第一個字母要大寫。');}
+  if(!/[.!?]["”']?$/.test(s)){s+='.';add('End your sentence with a period, question mark, or exclamation point.','句子結尾要加上標點符號。');}
+  const wc=s.split(/\s+/).length,used=usesWord(text,w),tips=[];
+  if(!used)tips.push({msg:`Your sentence doesn't use “${w.w}” yet. Try again with the word.`,zh:`記得在句子裡用到「${w.w}」。`});
+  if(wc<5)tips.push({msg:'Try a longer sentence (five words or more) so the meaning is clear.',zh:'試著說長一點的句子，讓意思更清楚。'});
+  const g=clamp(100-issues.length*12-(used?0:30)-(wc<5?10:0),25,100);
+  return {orig:text.trim(),corrected:s,issues,tips,used,g};
+}
+function pronTips(word){const t=[],x=word.toLowerCase();
+  if(/th/.test(x))t.push(['TH','Put your tongue lightly between your teeth for “th”. It is not “s” or “f”.','發「th」時，舌尖輕放在上下牙齒之間，不要發成 s 或 f。']);
+  if(/v/.test(x))t.push(['V','For “v”, touch your top teeth to your bottom lip and use your voice. It is not “w”.','發 v 時，上排牙齒輕碰下唇並振動聲帶，不要發成 w。']);
+  if(/r/.test(x)&&/l/.test(x))t.push(['R and L','Keep “r” and “l” different. Curl your tongue back for “r”; touch behind your top teeth for “l”.','r 舌頭往後捲；l 舌尖碰上排牙齒後方。兩個音要分清楚。']);
+  if(/(tion|sion)$/.test(x))t.push(['-tion','Say “-tion” like “shun”, with a soft ending.','字尾 -tion 唸作「shun」。']);
+  if(/[bdgkpt]s?$/.test(x)&&!x.includes(' '))t.push(['Final sound','Say the last consonant clearly. Don\'t drop it, and don\'t add a vowel after it.','字尾子音要清楚發出來，不要省略，也不要多加母音。']);
+  if(x.includes(' '))t.push(['Linking','Link the words smoothly, as if they were one long word.','片語要連在一起唸，聽起來像一個長字。']);
+  if(!t.length)t.push(['Stress','Listen to the model and copy which syllable is the strongest.','仔細聽示範，模仿哪一個音節要重讀。']);
+  return t.slice(0,2);}
+
+/* Podcast */
+function buildPodcast(words,topic){
+  const lines=[];const L=(sp,t,slow)=>lines.push({sp,t,slow:!!slow});
+  const tn=topic==='mywords'?'your saved words':topicName(topic).toLowerCase();
+  L('Mia','Hi everyone, and welcome to SpeakUp Daily, the five-minute English show where you hear new words in real conversation. I\'m Mia.');
+  L('Leo',`And I'm Leo. Today we're talking about ${tn}, and we have ${words.length} useful words for you. Listen carefully, because there's a short quiz at the end.`);
+  L('Mia','That\'s right. Don\'t worry if you don\'t catch everything the first time. Just relax and listen for the words you chose.');
+  const intro=[w=>`So, here's something that happened this week. ${w.ex}`,w=>`I heard a great sentence today. ${w.ex}`,w=>`Okay, next one. Imagine someone says this to you: ${w.ex}`,w=>`Here's an example from real life. ${w.ex}`,w=>`Let me tell you about my week. ${w.ex}`];
+  const react=['Good word.','I like that one.','That\'s a really useful one.','This one comes up a lot.','Nice choice.'];
+  const posTip={'n.':w=>`It's a noun, so you can talk about "the ${w.w}".`,'v.':()=>'It\'s a verb, so you can use it in the past tense when you tell a story about yesterday.','adj.':()=>'It\'s an adjective, so it describes a person or a thing.','adv.':()=>'It\'s an adverb. You often hear it at the start of a sentence.','phr.':()=>'It\'s a phrase, so learn it as one chunk. Native speakers use it all the time.'};
+  const memo=['Try saying it out loud three times.','Write it in your notebook tonight.','Try to use it in a message to a friend this week.','Notice when you hear it in movies or at work.','Say it slowly first, then a little faster.'];
+  words.forEach((w,i)=>{const a=i%2?'Leo':'Mia',b=i%2?'Mia':'Leo';
+    L(a,intro[i%intro.length](w));
+    L(b,`${cap(w.w)}. ${react[i%react.length]} ${cap(w.w)} means ${w.def}.`);
+    L(a,`${(posTip[w.pos]||posTip['phr.'])(w)} ${memo[i%memo.length]}`);
+    L(b,`Let me say it slowly for our listeners. ${w.ex}`,true);});
+  L('Mia',`Let's do a quick review. Today's words were: ${words.map(w=>w.w).join(', ')}.`);
+  L('Leo','Great job listening today. Now try the quiz and see how much you remember. See you next time on SpeakUp Daily!');
+  lines.forEach(l=>l.n=l.t.split(/\s+/).length);
+  return lines;}
+function podSecs(lines,upto,rate){let n=0;for(let i=0;i<upto;i++)n+=lines[i].n*(lines[i].slow?1.25:1);return n/(150*rate)*60;}
+const fmt=s=>`${Math.floor(s/60)}:${String(Math.round(s%60)).padStart(2,'0')}`;
+function playLine(){const P=S.L&&S.L.pod;if(!P||!P.playing)return;if(P.idx>=P.lines.length){P.playing=false;P.finished=true;P.idx=P.lines.length;render();return;}
+  const ln=P.lines[P.idx];S.L.words.forEach(w=>{if(!P.heard.includes(w.id)&&wordRe(w).test(ln.t))P.heard.push(w.id);});
+  render();const cur=document.querySelector('.tline.cur');if(cur)cur.scrollIntoView({block:'nearest',behavior:'smooth'});
+  const tok=++P.token;TTS.speak(ln.t,{sp:ln.sp,rate:(ln.slow?.8:1)*P.rate,onend:()=>{if(tok!==P.token||!P.playing)return;P.idx++;playLine();}});}
+function hi(text,words){const re=new RegExp('\\b('+words.map(w=>escRe(w.w)+'\\w*').sort((a,b)=>b.length-a.length).join('|')+')','gi');return text.split(re).map((p,i)=>i%2?`<mark>${esc(p)}</mark>`:esc(p)).join('');}
+
+/* Quiz */
+function buildQuiz(words){const qs=[],ws=shuffle(words);const others=w=>pick(words.filter(x=>x.id!==w.id),3).map(x=>x.w);
+  ws.filter(w=>wordRe(w).test(w.ex)).slice(0,3).forEach(w=>qs.push({prompt:'Complete the sentence you heard in the podcast.',quote:w.ex.replace(wordRe(w),'_____'),answer:w.w,options:shuffle([w.w,...others(w)])}));
+  ws.filter(w=>!qs.some(q=>q.answer===w.w)).slice(0,5-qs.length).forEach(w=>qs.push({prompt:`One of the hosts explained a word as “${w.def}.” Which word was it?`,answer:w.w,options:shuffle([w.w,...others(w)])}));
+  return shuffle(qs);}
+
+/* Finish */
+const AFF={a:[['Outstanding! You\'re speaking with real confidence.','太棒了！你的英文越來越有自信了。'],['Brilliant work! You owned this lesson.','表現超棒！這一課你完全掌握了。']],b:[['Great work! These words are becoming yours.','做得很好！這些單字正在變成你的。'],['Strong lesson! Keep this momentum going.','很棒的一課！保持這個節奏。']],c:[['Nice progress! Every lesson makes you stronger.','進步很多！每一課都讓你更強。'],['Good job! Practice makes these words stick.','做得好！多練習就能記得更牢。']],d:[['You showed up and practiced, and that is how fluency grows.','你今天有練習，這就是進步的開始。'],['Every expert started here. Try these words again tomorrow.','每個高手都是從這裡開始的。明天再複習一次吧！']]};
+function finishLesson(){const L=S.L,sc=L.scores,p=S.p,st=p.stats;
+  const voc=Math.round((sc.g1+sc.g2+sc.g3)/3);const overall=Math.round(voc*.4+sc.speak*.3+sc.listen*.3);
+  const stars=overall>=90?3:overall>=70?2:overall>=50?1:0;const band=overall>=90?'a':overall>=75?'b':overall>=60?'c':'d';
+  const xp=overall+L.words.length*5;const today=dayStr(new Date()),yd=dayStr(new Date(Date.now()-864e5));
+  if(st.lastDay!==today){st.streak=st.lastDay===yd?st.streak+1:1;st.lastDay=today;}
+  st.lessons++;st.xp+=xp;st.best=Math.max(st.best,overall);
+  p.history.unshift({d:today,topic:topicName(L.topic),score:overall});p.history=p.history.slice(0,20);
+  L.words.forEach(w=>{const m=p.myWords[w.id];if(!m)return;const pw=L.pw[w.id]||{};const earned=(pw.g1?1:0)+(pw.g2m===0?1:0)+(pw.sp?1:0);m.mastery=earned>=2?Math.min(3,m.mastery+1):earned===0?Math.max(0,m.mastery-1):m.mastery;m.seen=Date.now();});
+  save();L.result={overall,voc,stars,xp,aff:pick(AFF[band],1)[0]};}
+
+/* ---------------- Actions ---------------- */
+const A={
+ nav(r){stopAll();S.route=r;render();},
+ onboard(i){S.p.level=+i;S.p.onboarded=true;save();render();},
+ setLevel(v){S.p.level=+v;save();render();},
+ setTopic(v){S.p.topic=v;save();render();},
+ start(){startLesson();},
+ say(t){TTS.stop();if(!TTS.ok){toast('Speech is not available in this browser.');return;}TTS.speak(t,{sp:'Mia',rate:.9});},
+ toggle(id){const L=S.L,i=L.sel.indexOf(id);const need=Math.min(10,L.pool.length);if(i>=0)L.sel.splice(i,1);else if(L.sel.length<need)L.sel.push(id);else{toast(`You've chosen ${need} words. Tap a word to remove it first.`);return;}render();},
+ autoPick(){const L=S.L,need=Math.min(10,L.pool.length);const rest=L.pool.slice(0,Math.max(need,20)).filter(w=>!L.sel.includes(w.id));L.sel=[...L.sel,...pick(rest,need-L.sel.length).map(w=>w.id)];render();},
+ toggleZh(){S.L.showZh=!S.L.showZh;render();},
+ more(){S.L.show+=20;render();},
+ confirmPick(){const L=S.L;L.words=L.sel.map(id=>L.pool.find(w=>w.id===id));const now=Date.now();L.words.forEach((w,k)=>{S.p.myWords[w.id]={...w,mastery:0,added:now+k,seen:null};});save();initG1();render();},
+ g1pick(k){const g=S.L.g1,q=g.qs[g.i];if(g.picked!=null)return;g.picked=+k;if(q.options[+k]===q.w.zh){g.correct++;S.L.pw[q.w.id].g1=true;}render();scrollToId('nextBtn');},
+ g1next(){const g=S.L.g1;g.i++;g.picked=null;if(g.i>=g.qs.length){const s=Math.round(g.correct/g.qs.length*100);S.L.scores.g1=s;inter({title:`${msgFor(s)} Game 1 complete.`,sub:`You matched ${g.correct} of ${g.qs.length} words to their Traditional Chinese meaning.`,score:s,p:.15,next:'g2',btn:'Next: Match the meaning'});}render();},
+ g2tap(arg){const g=S.L.g2;if(g.bad)return;const [side,id]=arg.split(':');if(g.done.includes(id))return;
+   if(side==='L')g.selL=g.selL===id?null:id;else g.selR=g.selR===id?null:id;
+   if(g.selL&&g.selR){if(g.selL===g.selR){g.done.push(g.selL);g.selL=g.selR=null;if(g.done.length===g.left.length){render();setTimeout(g2Round,450);return;}}
+     else{g.mistakes++;[g.selL,g.selR].forEach(x=>{if(S.L.pw[x])S.L.pw[x].g2m++;});g.bad=[g.selL,g.selR];render();setTimeout(()=>{if(!S.L||!S.L.g2)return;g.bad=null;g.selL=g.selR=null;render();},650);return;}}
+   render();},
+ g3start(){const g=S.L.g3;g.state='run';g3Next();render();TIMER=setInterval(g3Tick,100);},
+ g3ans(v){const g=S.L.g3;if(!g||g.state!=='run')return;const ok=(v==='1')===g.item.truth;g.attempts++;if(ok){g.correct++;g.streak++;g.best=Math.max(g.best,g.streak);g.points+=10+Math.min(g.streak,5)*2;}else g.streak=0;g.fx=ok?'good':'bad';g3Next();render();},
+ interNext(){const nx=S.L.inter.next;({g2:initG2,g3:initG3,speak:initSpeak,listen:initListen})[nx]();render();},
+ mic(){const sp=S.L.sp;if(sp.rec){try{REC&&REC.stop();}catch(e){}return;}
+   if(!SR){toast('Voice input is not supported in this browser. Type your sentence instead.');return;}
+   try{REC=new SR();REC.lang='en-US';REC.interimResults=true;REC.continuous=false;
+     REC.onresult=e=>{let t='',c=0,n=0;for(const r of e.results){t+=r[0].transcript;if(r.isFinal){c+=r[0].confidence||0;n++;}}sp.text=t.trim();sp.viaMic=true;sp.edited=false;if(n)sp.conf=c/n;const ta=document.getElementById('sayText');if(ta)ta.value=sp.text;updChk();};
+     REC.onerror=e=>{if(/not-allowed|service-not-allowed|audio-capture/.test(e.error))toast('The microphone is blocked in this preview. Type your sentence instead.');else if(e.error==='no-speech')toast('I didn\'t hear anything. Tap the mic and try again.');};
+     REC.onend=()=>{sp.rec=false;REC=null;if(S.L&&S.L.step==='speak')render();};
+     REC.start();sp.rec=true;render();}
+   catch(e){REC=null;sp.rec=false;toast('The microphone is not available here. Type your sentence instead.');}},
+ idea(){S.L.sp.idea=!S.L.sp.idea;render();},
+ spCheck(){const sp=S.L.sp,w=S.L.words[sp.i];if(sp.rec)A.mic();const a=analyze(sp.text,w);if(!a)return;let p=null;if(sp.viaMic&&!sp.edited){p=sp.conf?Math.round(sp.conf*100):85;if(!a.used)p-=20;p=clamp(p,40,100);}sp.fb={...a,p,ptips:pronTips(w.w)};render();scrollToId('fb');},
+ spRetry(){const sp=S.L.sp;sp.fb=null;sp.text='';sp.viaMic=false;sp.edited=false;sp.conf=null;render();},
+ spNext(skip){const L=S.L,sp=L.sp,w=L.words[sp.i];stopAll();const fb=skip?null:sp.fb;const score=fb?(fb.p!=null?Math.round(fb.g*.6+fb.p*.4):fb.g):0;sp.results[sp.i]={score,text:fb?fb.orig:null};if(fb&&fb.used&&fb.g>=70)L.pw[w.id].sp=true;
+   sp.i++;Object.assign(sp,{text:'',viaMic:false,edited:false,conf:null,fb:null,idea:false});
+   if(sp.i>=L.words.length){const s=Math.round(sp.results.reduce((a,r)=>a+r.score,0)/L.words.length);L.scores.speak=s;const done=sp.results.filter(r=>r.text).length;inter({title:`${msgFor(s)} Speaking complete.`,sub:`You spoke ${done} of ${L.words.length} sentences. Next, listen to a short podcast that uses all of your words.`,score:s,p:.7,next:'listen',btn:'Next: Listening',tip:'Tip: listen once without the transcript. Then turn it on if you need help.'});}
+   render();},
+ spSkip(){A.spNext(true);},
+ podToggle(){const P=S.L.pod;if(!TTS.ok){toast('Your browser can\'t play speech here. Read the transcript instead.');return;}
+   if(P.playing){P.playing=false;P.token++;TTS.stop();render();}else{P.playing=true;if(P.idx>=P.lines.length)P.idx=0;playLine();}},
+ podJump(d){const P=S.L.pod;P.idx=clamp(P.idx+(+d),0,P.lines.length-1);if(P.playing){P.token++;TTS.stop();playLine();}else render();},
+ podRate(r){const P=S.L.pod;P.rate=+r;if(P.playing){P.token++;TTS.stop();playLine();}else render();},
+ podT(){S.L.pod.showT=!S.L.pod.showT;render();},
+ toQuiz(){stopAll();S.L.quiz={qs:buildQuiz(S.L.words),i:0,picked:null,correct:0};S.L.step='quiz';render();},
+ qpick(k){const q=S.L.quiz,it=q.qs[q.i];if(q.picked!=null)return;q.picked=+k;if(it.options[+k]===it.answer)q.correct++;render();scrollToId('nextBtn');},
+ qnext(){const q=S.L.quiz;q.i++;q.picked=null;if(q.i>=q.qs.length){S.L.scores.listen=Math.round(q.correct/q.qs.length*100);S.L.step='done';finishLesson();}render();},
+ nextLesson(){S.L=null;startLesson();},
+ goHome(){stopAll();S.L=null;S.route='home';render();},
+ askQuit(){S.modal={title:'Leave this lesson?',body:'Your progress in this lesson will be lost. Words you chose stay in My Words.',ok:'Leave lesson',act:'quit'};render();},
+ quit(){S.modal=null;A.goHome();},
+ askReset(){S.modal={title:'Reset demo data?',body:'This clears your level, My Words, scores, and streak in this browser.',ok:'Reset everything',act:'reset'};render();},
+ reset(){stopAll();S.p=DEF();S.L=null;S.modal=null;S.route='home';save();render();},
+ closeModal(){S.modal=null;render();},
+ wf(f){S.wf=f;render();},
+ report(id){const w=ALL.find(x=>x.id===id)||S.p.myWords[id];if(!w)return;S.modal={type:'report',id,word:w.w,reason:null,note:''};render();},
+ repReason(v){S.modal.reason=v;const b=document.getElementById('repSend');if(b)b.disabled=false;},
+ sendReport(){const m=S.modal;if(!m||!m.reason)return;S.p.reports.push({id:m.id,word:m.word,reason:m.reason,note:m.note.trim(),at:new Date().toISOString(),where:S.route==='lesson'&&S.L?S.L.step:S.route});save();S.modal=null;render();toast('Thank you! Your report helps us fix our word lists. 感謝回報！');},
+ unsave(id){const m=S.p.myWords[id];if(!m)return;delete S.p.myWords[id];save();render();toast(`“${m.w}” is back in its word list.`);},
+ practice(){const ws=Object.values(S.p.myWords).sort((a,b)=>a.mastery-b.mastery||a.added-b.added).slice(0,10).map(w=>({...w}));if(ws.length<4){toast('Save at least 4 words to practice.');return;}startLesson(ws);}
+};
+function g2Round(){const g=S.L&&S.L.g2;if(!g)return;g.r++;if(g.r>=g.rounds.length){const s=Math.max(0,100-g.mistakes*10);S.L.scores.g2=s;inter({title:`${msgFor(s)} Game 2 complete.`,sub:g.mistakes?`You made ${g.mistakes} wrong match${g.mistakes>1?'es':''}. Practice makes perfect!`:'A perfect round with no wrong matches!',score:s,p:.27,next:'g3',btn:'Next: Quick Think'});}else{const ws=g.rounds[g.r];Object.assign(g,{left:shuffle(ws),right:shuffle(ws),selL:null,selR:null,done:[]});}render();}
+function updChk(){const b=document.getElementById('chkBtn');if(b)b.disabled=!S.L.sp.text.trim();}
+
+/* ---------------- Views ---------------- */
+function vWelcome(){return `<main class="scroll"><div class="stack" style="padding-top:26px">
+ <div class="hero">${logo(72)}<h1 class="wtitle">SpeakUp!</h1><p class="tag">Learn it. Say it. Hear it.</p><p class="zh muted" style="margin-top:4px">學單字・開口說・用耳聽</p></div>
+ <div><h2 class="h2">What's your English level?</h2><p class="muted" style="margin-top:4px">Pick the closest match. You can change it anytime.</p><p class="note" style="margin-top:12px">Welcome to the free beta! If a translation or example looks wrong, tap <strong>Report</strong> to tell us. 發現翻譯或例句有誤？請按「回報」告訴我們。</p></div>
+ ${LEVELS.map((l,i)=>`<button class="lvlbtn" data-act="onboard" data-arg="${i}"><span class="lvlbadge" style="background:${LVCOL[i]}">${l.badge}</span><span><strong class="disp" style="font-size:19px">${l.name}</strong><span class="muted small block">CEFR ${l.cefr} · TOEIC ${l.toeic}</span><span class="small block" style="margin-top:2px">${l.blurb}</span></span></button>`).join('')}
+</div></main>`;}
+
+function topBrand(){const st=S.p.stats;return `<header class="top"><div class="brand">${logo()}<span>SpeakUp!</span><span class="beta">BETA</span></div><span class="spacer"></span><span class="pill" aria-label="${st.streak} day streak">${ic('flame','color:#D24A22')}${st.streak}</span><span class="pill" aria-label="${st.xp} experience points">${ic('bolt','color:#B7791F')}${st.xp} XP</span></header>`;}
+function greeting(){const h=new Date().getHours();return h<12?'Good morning':h<18?'Good afternoon':'Good evening';}
+function vHome(){const lv=S.p.level,t=S.p.topic;const pool=t==='random'?null:getPool(lv,t);
+ const steps=[['book','#DDF1EE','#075049','1. Vocabulary','Choose 10 words, then play 3 quick games.'],['mic','#FDE7DF','#9E3415','2. Speaking','Say a sentence with each word and get feedback.'],['headphones','#FFF3D1','#6B4A00','3. Listening','Hear your words in a 5-minute podcast, then take a quiz.']];
+ return topBrand()+`<main class="scroll"><div class="stack">
+ <div><p class="eyebrow">${greeting()}</p><h1 class="h1">Ready for today's lesson?</h1><p class="muted" style="margin-top:6px">Learn 10 words, say them out loud, then hear them in a mini podcast.</p></div>
+ <div class="card stack">
+  <div><label class="fl" for="lvlSel">Your level</label><select id="lvlSel" data-change="setLevel">${LEVELS.map((l,i)=>`<option value="${i}"${i===lv?' selected':''}>${l.name} (CEFR ${l.cefr})</option>`).join('')}</select></div>
+  <div><label class="fl" for="topSel">Topic</label><select id="topSel" data-change="setTopic">
+   <option value="random"${t==='random'?' selected':''}>Random topic</option>
+   <optgroup label="Core list"><option value="toeic"${t==='toeic'?' selected':''}>TOEIC Essentials</option></optgroup>
+   <optgroup label="Themed lists">${THEME_IDS.map(id=>`<option value="${id}"${t===id?' selected':''}>${THEMES[id].name}</option>`).join('')}</optgroup>
+   <optgroup label="More lists in the full app">${COMING.map(n=>`<option disabled>${esc(n)}</option>`).join('')}</optgroup></select></div>
+  <div class="topicrow">${badge(t)}<div><strong>${esc(topicName(t))}</strong><div class="muted small">${pool?`${pool.length} words left to learn · ${LEVELS[lv].name}`:'We\'ll pick a topic for you'}</div></div></div>
+  <button class="btn block" data-act="start">Start lesson ${ic('right')}</button>
+ </div>
+ <div><h2 class="h2">How a lesson works</h2><div class="steps">${steps.map(s=>`<div class="stepc"><span class="sic" style="background:${s[1]};color:${s[2]}">${ic(s[0])}</span><div><strong class="disp" style="font-size:17px">${s[3]}</strong><p class="muted small" style="margin-top:2px">${s[4]}</p></div></div>`).join('')}</div><p class="muted small" style="margin-top:8px">About 15 to 20 minutes per lesson.</p></div>
+ ${S.p.history.length?`<div class="card"><h2 class="h3">Recent lessons</h2>${S.p.history.slice(0,4).map(h=>`<div class="hist"><span>${esc(h.topic)}<span class="muted small block">${h.d}</span></span><span>${h.score}%</span></div>`).join('')}</div>`:''}
+ </div></main>`;}
+
+function segs(){const L=S.L;let p;
+ if(L.step==='inter')p=L.inter.p;else{const m={pick:.02,g1:.02+.13*(L.g1?L.g1.i/L.g1.qs.length:0),g2:.15+.12*(L.g2?L.g2.r/L.g2.rounds.length:0),g3:.28,speak:.4+.3*(L.sp?L.sp.i/L.words.length:0),listen:.72,quiz:.85+.15*(L.quiz?L.quiz.i/L.quiz.qs.length:0),done:1};p=m[L.step]||0;}
+ return [['Vocabulary',0,.4],['Speaking',.4,.7],['Listening',.7,1]].map(([n,a,b])=>{const f=clamp((p-a)/(b-a),0,1);return `<div class="seg${p>=a&&p<b?' cur':''}"><div class="bar"><i style="width:${f*100}%"></i></div><span>${n}</span></div>`;}).join('');}
+function lessonShell(body,foot='',o={}){return `<header class="top"><button class="iconbtn" data-act="askQuit" aria-label="Leave lesson">${ic('x')}</button><div class="lprog" aria-hidden="true">${segs()}</div>${o.count?`<span class="pill">${o.count}</span>`:''}</header><main class="scroll"><div class="stack">${body}</div></main>${foot?`<div class="foot">${foot}</div>`:''}`;}
+
+function vPick(){const L=S.L,n=L.sel.length,need=Math.min(10,L.pool.length);
+ if(need<4)return lessonShell(`<p class="eyebrow">Step 1 · Vocabulary</p><h2 class="h2">You've learned this list!</h2><p class="muted">Only ${L.pool.length} words are left in ${esc(topicName(L.topic))}. Choose another topic or level, or practice from My Words.</p>`,`<button class="btn block" data-act="goHome">Choose another topic</button>`);
+ const shown=L.pool.slice(0,L.show);
+ const card=w=>{const on=L.sel.includes(w.id);const full=!on&&n>=need;return `<div class="wrow"><button class="wcard${on?' on':''}" data-act="toggle" data-arg="${esc(w.id)}" aria-pressed="${on}"${full?' aria-disabled="true"':''}><span class="tick">${ic('check')}</span><span class="wword">${esc(w.w)}</span><span class="pos">${esc(w.pos)}</span><span class="lv">${LEVELS[w.lvl].name}</span><span class="wdef">${esc(w.def)}</span>${L.showZh?`<span class="zh wzh">${esc(w.zh)}</span>`:''}</button><button class="iconbtn say" data-act="say" data-arg="${esc(w.w)}" aria-label="Hear ${esc(w.w)}">${ic('vol')}</button></div>`;};
+ return lessonShell(`<div><p class="eyebrow">Step 1 · Vocabulary</p><h2 class="h2">Choose ${need} words</h2><p class="muted" style="margin-top:6px">${esc(topicName(L.topic))}${L.random?' (random)':''} · ${LEVELS[S.p.level].name}. Pick words that are new or that you want to practice. They move to <strong>My Words</strong>.</p></div>
+ ${L.pool.length<10?`<div class="note">Only ${L.pool.length} words are left in this list, so this lesson will use ${need}.</div>`:''}
+ <div class="toolbar"><button class="btn sec sm" data-act="autoPick"${n>=need?' disabled':''}>${ic('shuffle')} Auto-pick</button><button class="btn sec sm" data-act="toggleZh" aria-pressed="${L.showZh}"><span class="zh">中</span> ${L.showZh?'Hide':'Show'} Chinese</button></div>
+ <div class="wlist">${shown.map(card).join('')}</div>
+ ${L.pool.length>shown.length?`<button class="btn sec block" data-act="more">Show more words</button>`:''}`,
+ `<button class="btn block" data-act="confirmPick"${n<need?' disabled':''}>${n<need?`Choose ${need-n} more`:`Start with these ${n} words`} ${n<need?'':ic('right')}</button>`,{count:`${n}/${need}`});}
+
+function vG1(){const g=S.L.g1,q=g.qs[g.i],done=g.picked!=null,ok=done&&q.options[g.picked]===q.w.zh;
+ return lessonShell(`<div><p class="eyebrow">Game 1 of 3 · Chinese meaning</p><h2 class="h2">Choose the Traditional Chinese</h2></div>
+ <div class="qcard"><button class="iconbtn" data-act="say" data-arg="${esc(q.w.w)}" aria-label="Hear ${esc(q.w.w)}">${ic('vol')}</button><div class="big">${esc(q.w.w)}</div><p class="pos">${esc(q.w.pos)}</p></div>
+ <div class="opts">${q.options.map((o,k)=>{let c='';if(done){if(o===q.w.zh)c=' right';else if(k===g.picked)c=' wrong';}return `<button class="opt zh${c}" data-act="g1pick" data-arg="${k}"${done?' disabled':''}>${esc(o)}</button>`;}).join('')}</div>
+ ${done?`<div class="fb ${ok?'good':'bad'}">${ic(ok?'check':'x')}<span>${ok?'Correct!':'Not quite.'} <span class="zh">${esc(q.w.w)} = ${esc(q.w.zh)}</span><br><span style="font-weight:600">${esc(q.w.ex)}</span></span></div><button class="link small" data-act="report" data-arg="${esc(q.w.id)}" style="align-self:flex-start">${ic('flag')} Report a problem with this word</button>`:''}
+ <p class="qnum">Word ${g.i+1} of ${g.qs.length}</p>`,done?`<button class="btn block" id="nextBtn" data-act="g1next">${g.i+1<g.qs.length?'Next word':'Finish game'} ${ic('right')}</button>`:'');}
+
+function vG2(){const g=S.L.g2;const cls=(side,id)=>{if(g.done.includes(id))return ' done';if(g.bad&&((side==='L'&&g.bad[0]===id)||(side==='R'&&g.bad[1]===id)))return ' bad';if((side==='L'&&g.selL===id)||(side==='R'&&g.selR===id))return ' sel';return '';};
+ return lessonShell(`<div><p class="eyebrow">Game 2 of 3 · Match the meaning</p><h2 class="h2">Tap a word, then its meaning</h2><p class="muted" style="margin-top:6px">Round ${g.r+1} of ${g.rounds.length} · ${g.mistakes} wrong so far</p></div>
+ <div class="match"><div class="mcol">${g.left.map(w=>`<button class="mi w${cls('L',w.id)}" data-act="g2tap" data-arg="L:${esc(w.id)}"${g.done.includes(w.id)?' disabled':''} aria-pressed="${g.selL===w.id}">${esc(w.w)}</button>`).join('')}</div>
+ <div class="mcol">${g.right.map(w=>`<button class="mi${cls('R',w.id)}" data-act="g2tap" data-arg="R:${esc(w.id)}"${g.done.includes(w.id)?' disabled':''} aria-pressed="${g.selR===w.id}">${esc(w.def)}</button>`).join('')}</div></div>`);}
+
+function vG3(){const g=S.L.g3;
+ if(g.state==='ready')return lessonShell(`<div><p class="eyebrow">Game 3 of 3 · Quick Think</p><h2 class="h2">How fast can you think?</h2></div>
+  <div class="card stack"><div class="row">${ic('bolt','color:#B7791F')}<strong>45 seconds on the clock</strong></div><p class="muted">You'll see one of your words with a meaning. Is it a match? Answer as fast as you can. Correct answers in a row build a combo for bonus points.</p><p class="muted small">On a keyboard, press the left arrow for No and the right arrow for Yes.</p></div>`,`<button class="btn block" data-act="g3start">Start ${ic('right')}</button>`);
+ const it=g.item;
+ return lessonShell(`<div><p class="eyebrow">Game 3 of 3 · Quick Think</p><div class="row"><div class="timer" style="flex:1"><i style="width:${g.t/45*100}%"></i></div><strong id="tleft" style="min-width:36px;text-align:right">${Math.ceil(g.t)}s</strong></div></div>
+ <div class="stat3"><div><b>${g.points}</b><span>Points</span></div><div><b>${g.streak}</b><span>Combo</span></div><div><b>${g.correct}/${g.attempts}</b><span>Correct</span></div></div>
+ <div class="qtcard ${g.fx||''}" aria-live="polite"><div class="big">${esc(it.w.w)}</div><div class="means">means</div><div class="def${it.mode==='zh'?' zh':''}">${esc(it.mode==='zh'?it.d.zh:it.d.def)}</div></div>
+ <div class="qbtns"><button class="btn no" data-act="g3ans" data-arg="0">${ic('x')} No</button><button class="btn yes" data-act="g3ans" data-arg="1">${ic('check')} Yes</button></div>`);}
+
+function vInter(){const o=S.L.inter;return lessonShell(`<div class="stack center" style="padding-top:18px">${ring(o.score)}<h2 class="h2">${esc(o.title)}</h2><p class="muted">${esc(o.sub)}</p>${o.tip?`<div class="note" style="text-align:left">${esc(o.tip)}</div>`:''}</div>`,`<button class="btn block teal" data-act="interNext">${esc(o.btn)} ${ic('right')}</button>`);}
+
+function vSpeak(){const L=S.L,sp=L.sp,w=L.words[sp.i],fb=sp.fb;
+ const fbHtml=fb?`<div id="fb" class="stack">
+  <div class="scores2"><div class="sbox"><b>${fb.g}%</b><span>Grammar</span></div><div class="sbox p"><b>${fb.p!=null?fb.p+'%':'n/a'}</b><span>Pronunciation</span></div></div>
+  ${fb.p==null?`<p class="muted small">Pronunciation is measured when you record with the microphone. Typed sentences get grammar feedback only.</p>`:''}
+  ${fb.issues.length||fb.tips.length?`<ul class="issues">${[...fb.tips,...fb.issues].map(x=>`<li>${esc(x.msg)}<span class="zh">${esc(x.zh)}</span></li>`).join('')}</ul>`:`<div class="fb good">${ic('check')}<span>Great sentence! The grammar is clear and correct.</span></div>`}
+  ${fb.corrected!==fb.orig?`<div class="corr"><p>${esc(fb.corrected)}</p><button class="iconbtn" data-act="say" data-arg="${esc(fb.corrected)}" aria-label="Hear the corrected sentence">${ic('vol')}</button></div>`:''}
+  <div class="card stack" style="padding:14px"><strong class="disp">Sound tips for “${esc(w.w)}”</strong>${fb.ptips.map(t=>`<p class="small"><span class="tipk">${esc(t[0])}</span>${esc(t[1])}<span class="zh muted block" style="margin-top:2px">${esc(t[2])}</span></p>`).join('')}</div>
+  <p class="preview">Preview feedback is rule-based. The full app sends your sentence to Claude.</p></div>`:'';
+ return lessonShell(`<div><p class="eyebrow">Step 2 · Speaking</p><h2 class="h2">Say a sentence with this word</h2></div>
+ <div class="qcard"><button class="iconbtn" data-act="say" data-arg="${esc(w.w)}" aria-label="Hear ${esc(w.w)}">${ic('vol')}</button><div class="big">${esc(w.w)}</div><p class="pos">${esc(w.pos)} · <span class="zh">${esc(w.zh)}</span></p><p style="margin-top:8px;color:#E4E5F0;font-size:15px">${esc(w.def)}</p></div>
+ <button class="link small" data-act="report" data-arg="${esc(w.id)}" style="align-self:flex-end;margin-top:-8px">${ic('flag')} Report this word</button>
+ ${fb?'':`<button class="link" data-act="idea" style="align-self:flex-start">${ic('bulb')} ${sp.idea?'Hide the idea':'Need an idea?'}</button>
+ ${sp.idea?`<div class="note">${esc(w.ex)} <button class="link" data-act="say" data-arg="${esc(w.ex)}" style="min-height:0">Hear it</button></div>`:''}
+ <button class="mic${sp.rec?' rec':''}" data-act="mic" aria-label="${sp.rec?'Stop recording':'Start recording'}">${ic(sp.rec?'stop':'mic')}</button>
+ <p class="miclbl" aria-live="polite">${sp.rec?'Listening… tap to stop':'Tap to record'}</p>
+ <div><label class="fl" for="sayText">Or type what you said</label><textarea id="sayText" placeholder="Example: ${esc(w.ex)}">${esc(sp.text)}</textarea></div>`}
+ ${fbHtml}<p class="qnum">Word ${sp.i+1} of ${L.words.length}</p>`,
+ fb?`<div class="row"><button class="btn sec" data-act="spRetry" style="flex:1">${ic('refresh')} Try again</button><button class="btn" data-act="spNext" style="flex:1.3">${sp.i+1<L.words.length?'Next word':'Finish'} ${ic('right')}</button></div>`
+   :`<div class="row"><button class="link" data-act="spSkip">Skip</button><button class="btn" id="chkBtn" data-act="spCheck" style="flex:1"${sp.text.trim()?'':' disabled'}>Check my sentence</button></div>`);}
+
+function vListen(){const L=S.L,P=L.pod,n=L.words.length;const total=podSecs(P.lines,P.lines.length,P.rate),el=podSecs(P.lines,Math.min(P.idx,P.lines.length),P.rate);
+ return lessonShell(`<div><p class="eyebrow">Step 3 · Listening</p><h2 class="h2">Your mini podcast</h2><p class="muted" style="margin-top:6px">Listen for your ${n} words. Each one lights up when you hear it.</p></div>
+ <div class="cover${P.playing?' playing':''}"><div class="wave" aria-hidden="true">${[46,72,58,80,40,64].map(h=>`<i style="height:${h}px"></i>`).join('')}</div><span class="ep">EPISODE ${S.p.stats.lessons+1}</span><strong class="disp" style="font-size:24px;line-height:1.15">SpeakUp Daily:<br>${esc(L.topic==='mywords'?'Your saved words':topicName(L.topic))}</strong><span style="color:#D9DAE8">with Mia and Leo · ${fmt(total)}</span></div>
+ <div class="card"><div class="pbar"><i style="width:${P.idx/P.lines.length*100}%"></i></div><div class="ptime"><span>${fmt(el)}</span><span>${fmt(total)}</span></div>
+ <div class="pctl"><button class="iconbtn" data-act="podJump" data-arg="-1" aria-label="Previous line">${ic('back')}</button><button class="playbtn" data-act="podToggle" aria-label="${P.playing?'Pause':'Play'}">${ic(P.playing?'pause':'play')}</button><button class="iconbtn" data-act="podJump" data-arg="1" aria-label="Next line">${ic('fwd')}</button></div>
+ <div class="speeds" role="group" aria-label="Playback speed">${[.8,1,1.2].map(r=>`<button class="spd" data-act="podRate" data-arg="${r}" aria-pressed="${P.rate===r}">${r}x</button>`).join('')}</div></div>
+ <div><h3 class="h3">Words to catch <span class="muted">(${P.heard.length}/${n})</span></h3><div class="chips">${L.words.map(w=>{const h=P.heard.includes(w.id);return `<span class="chip${h?' heard':''}">${h?ic('check'):''}${esc(w.w)}</span>`;}).join('')}</div></div>
+ ${!TTS.ok?`<div class="note">Your browser can't play speech here, so read the transcript instead.</div>`:''}
+ <button class="btn sec block" data-act="podT">${P.showT?'Hide':'Show'} transcript</button>
+ ${P.showT?`<div class="card trans" style="padding:10px">${P.lines.map((l,k)=>`<p class="tline ${l.sp.toLowerCase()}${k===P.idx&&P.playing?' cur':''}"><b class="sp">${l.sp}</b>${hi(l.t,L.words)}</p>`).join('')}</div>`:''}`,
+ `<button class="btn block${P.finished?'':' sec'}" data-act="toQuiz">${P.finished?'Take the quiz':'I\'m ready for the quiz'} ${ic('right')}</button>`);}
+
+function vQuiz(){const q=S.L.quiz,it=q.qs[q.i],done=q.picked!=null,ok=done&&it.options[q.picked]===it.answer;
+ return lessonShell(`<div><p class="eyebrow">Step 3 · Listening quiz</p><h2 class="h2">${esc(it.prompt)}</h2></div>
+ ${it.quote?`<div class="quote">“${esc(it.quote)}”</div>`:''}
+ <div class="opts">${it.options.map((o,k)=>{let c='';if(done){if(o===it.answer)c=' right';else if(k===q.picked)c=' wrong';}return `<button class="opt en${c}" data-act="qpick" data-arg="${k}"${done?' disabled':''}>${esc(o)}</button>`;}).join('')}</div>
+ ${done?`<div class="fb ${ok?'good':'bad'}">${ic(ok?'check':'x')}<span>${ok?'Correct!':`The answer is “${esc(it.answer)}”.`}</span></div>`:''}
+ <p class="qnum">Question ${q.i+1} of ${q.qs.length}</p>`,done?`<button class="btn block" id="nextBtn" data-act="qnext">${q.i+1<q.qs.length?'Next question':'See my results'} ${ic('right')}</button>`:'');}
+
+function vDone(){const L=S.L,r=L.result,sc=L.scores,st=S.p.stats;
+ const cols=['#FFC94A','#D24A22','#0E7C74','#5B4BC4','#F59AB5'];
+ const conf=r.stars>0?Array.from({length:36},(_,i)=>`<i style="left:${Math.random()*100}%;background:${cols[i%5]};animation-delay:${(Math.random()*.9).toFixed(2)}s;transform:rotate(${Math.round(Math.random()*180)}deg)"></i>`).join(''):'';
+ const bar=(label,v,c='')=>`<div><div class="r"><span>${label}</span><span>${v}%</span></div><div class="meter${c}"><i style="width:${v}%"></i></div></div>`;
+ return `<div class="confetti" aria-hidden="true">${conf}</div><main class="scroll"><div class="stack center" style="padding-top:24px">
+ <p class="eyebrow">Lesson complete</p>${ring(r.overall,170)}
+ <div class="stars" role="img" aria-label="${r.stars} of 3 stars">${[0,1,2].map(i=>starSvg(i<r.stars)).join('')}</div>
+ <h1 class="h2" style="font-size:24px">${esc(r.aff[0])}</h1><p class="zh muted">${esc(r.aff[1])}</p>
+ <div class="pillrow"><span class="pill">${ic('bolt','color:#B7791F')} +${r.xp} XP</span><span class="pill">${ic('flame','color:#D24A22')} ${st.streak} day streak</span></div>
+ <div class="card brk stack" style="width:100%;text-align:left"><h2 class="h3">Your scores</h2>
+  ${bar('Vocabulary',r.voc,' t')}<div class="muted small" style="margin-top:-6px">Chinese meaning ${sc.g1}% · Match ${sc.g2}% · Quick Think ${sc.g3}%</div>
+  ${bar('Speaking',sc.speak)}${bar('Listening',sc.listen,' v')}</div>
+ <div class="card" style="width:100%;text-align:left"><h2 class="h3">${L.practice?'Words you reviewed':'Saved to My Words'}</h2><div class="chips">${L.words.map(w=>{const m=S.p.myWords[w.id];return `<span class="chip heard">${esc(w.w)}${m?` <span class="dots">${[0,1,2].map(i=>`<i class="${i<m.mastery?'f':''}"></i>`).join('')}</span>`:''}</span>`;}).join('')}</div></div>
+ </div></main><div class="foot stack" style="gap:10px"><button class="btn block" data-act="nextLesson">Next lesson ${ic('right')}</button><button class="btn sec block" data-act="goHome">Back to home</button></div>`;}
+
+function vWords(){const all=Object.values(S.p.myWords).sort((a,b)=>b.added-a.added);const f=S.wf;
+ const list=all.filter(w=>f==='all'||(f==='mastered'?w.mastery>=3:w.mastery<3));
+ const nM=all.filter(w=>w.mastery>=3).length;
+ return `<header class="top"><h1 class="h1">My Words</h1><span class="spacer"></span><span class="pill">${all.length} saved</span></header><main class="scroll"><div class="stack">
+ ${all.length>=4?`<div class="card stack"><div class="row">${ic('trophy','color:#0E7C74')}<strong class="disp" style="font-size:18px">Practice my words</strong></div><p class="muted small">Review the ${Math.min(10,all.length)} words you know least, with all three exercises.</p><button class="btn teal block" data-act="practice">Start review</button></div>`:''}
+ ${all.length?`<div class="seg3" role="group" aria-label="Filter words">${[['all',`All ${all.length}`],['learning',`Learning ${all.length-nM}`],['mastered',`Mastered ${nM}`]].map(([k,l])=>`<button data-act="wf" data-arg="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>
+ <div><label class="fl" for="wq">Search</label><input type="search" id="wq" placeholder="Find a word" value="${esc(S.wq)}"></div>`:''}
+ ${all.length?'':`<div class="empty">${logo(56)}<h2 class="h2" style="margin-top:10px;color:var(--ink)">No words yet</h2><p style="margin-top:6px">Words you choose in a lesson are saved here so you can review them later.</p><button class="btn" data-act="nav" data-arg="home" style="margin-top:16px">Start a lesson</button></div>`}
+ <div class="stack" id="mwl">${list.map(w=>`<div class="mw" data-q="${esc((w.w+' '+w.zh+' '+w.def).toLowerCase())}"><div class="body"><div><span class="wword">${esc(w.w)}</span><span class="pos">${esc(w.pos)}</span><span class="dots" role="img" aria-label="Mastery ${w.mastery} of 3">${[0,1,2].map(i=>`<i class="${i<w.mastery?'f':''}"></i>`).join('')}</span></div><div class="zh" style="margin-top:2px">${esc(w.zh)}</div><div class="muted small" style="margin-top:2px">${esc(w.def)}</div><div class="muted small" style="margin-top:4px">${esc(topicName(w.topic))} · ${w.mastery>=3?'Mastered':'Learning'}</div></div><div class="mwact"><button class="iconbtn" data-act="report" data-arg="${esc(w.id)}" aria-label="Report a problem with ${esc(w.w)}">${ic('flag')}</button><button class="iconbtn" data-act="say" data-arg="${esc(w.w)}" aria-label="Hear ${esc(w.w)}">${ic('vol')}</button><button class="iconbtn" data-act="unsave" data-arg="${esc(w.id)}" aria-label="Return ${esc(w.w)} to its list">${ic('trash')}</button></div></div>`).join('')}</div>
+ ${all.length&&!list.length?`<p class="empty">No words in this group yet.</p>`:''}
+ </div></main>`;}
+function filterWords(){const q=S.wq.trim().toLowerCase();document.querySelectorAll('#mwl .mw').forEach(el=>{el.hidden=!!q&&!el.dataset.q.includes(q);});}
+
+function vProfile(){const st=S.p.stats,nW=Object.keys(S.p.myWords).length;
+ return `<header class="top"><h1 class="h1">Profile</h1></header><main class="scroll"><div class="stack">
+ <div class="tiles"><div class="tile"><b>${st.lessons}</b><span>Lessons</span></div><div class="tile"><b>${st.xp}</b><span>Total XP</span></div><div class="tile"><b>${st.streak}</b><span>Day streak</span></div><div class="tile"><b>${st.best}%</b><span>Best score</span></div></div>
+ <div class="card stack"><div><label class="fl" for="lvlSel2">Your level</label><select id="lvlSel2" data-change="setLevel">${LEVELS.map((l,i)=>`<option value="${i}"${i===S.p.level?' selected':''}>${l.name} (CEFR ${l.cefr} · TOEIC ${l.toeic})</option>`).join('')}</select></div><p class="muted small">${nW} words saved in My Words.</p><p class="muted small">Beta feedback: ${S.p.reports.length} word report${S.p.reports.length===1?'':'s'} sent. Thank you!</p></div>
+ <div class="card"><h2 class="h3">Lesson history</h2>${S.p.history.length?S.p.history.map(h=>`<div class="hist"><span>${esc(h.topic)}<span class="muted small block">${h.d}</span></span><span>${h.score}%</span></div>`).join(''):'<p class="muted" style="margin-top:6px">Finish a lesson to see your history.</p>'}</div>
+ <button class="btn sec block" data-act="askReset">Reset demo data</button>
+ <p class="muted small" style="text-align:center">Progress is saved on this device only.</p>
+ </div></main>`;}
+
+function vMain(){const r=S.route,body=r==='words'?vWords():r==='profile'?vProfile():vHome();
+ const tab=(k,i,l)=>`<button class="tab" data-act="nav" data-arg="${k}"${r===k?' aria-current="page"':''}><span class="tabic">${ic(i)}</span>${l}</button>`;
+ return body+`<nav class="tabs" aria-label="Main">${tab('home','book','Learn')}${tab('words','bookmark','My Words')}${tab('profile','user','Profile')}</nav>`;}
+function vLesson(){const s=S.L.step;return ({pick:vPick,g1:vG1,g2:vG2,g3:vG3,inter:vInter,speak:vSpeak,listen:vListen,quiz:vQuiz,done:vDone})[s]();}
+function vModal(){const m=S.modal;if(m.type==='report'){const rs=[['zh','The Chinese translation is wrong','中文翻譯有誤'],['def','The definition is unclear','英文解釋不清楚'],['ex','The example sentence is wrong or unnatural','例句有誤或不自然'],['audio','The pronunciation sounds wrong','發音聽起來不對'],['other','Something else','其他問題']];return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="sheet stack" style="max-height:92%;overflow-y:auto"><h2 class="h2" id="mt">Report “${esc(m.word)}”</h2><p class="muted small">What's wrong? Your report goes to the SpeakUp! team. 請選擇問題類型。</p><fieldset style="border:0;padding:0;margin:0" class="stack"><legend class="fl">Problem</legend>${rs.map(r=>`<label class="radio"><input type="radio" name="rep" value="${r[0]}" data-change="repReason"${m.reason===r[0]?' checked':''}><span>${r[1]}<span class="zh muted small block">${r[2]}</span></span></label>`).join('')}</fieldset><div><label class="fl" for="repNote">Details (optional)</label><textarea id="repNote" placeholder="Example: should be 收據, not 發票">${esc(m.note)}</textarea></div><button class="btn block" id="repSend" data-act="sendReport"${m.reason?'':' disabled'}>Send report</button><button class="btn sec block" data-act="closeModal">Cancel</button></div></div>`;}return `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="sheet stack"><h2 class="h2" id="mt">${esc(m.title)}</h2><p class="muted">${esc(m.body)}</p><button class="btn block" data-act="${m.act}">${esc(m.ok)}</button><button class="btn sec block" data-act="closeModal">Cancel</button></div></div>`;}
+
+let lastKey='';
+function screenKey(){if(!S.p.onboarded)return 'welcome';if(S.route!=='lesson')return S.route;const L=S.L;return 'L:'+L.step+':'+(L.step==='g1'?L.g1.i:L.step==='speak'?L.sp.i:L.step==='quiz'?L.quiz.i:L.step==='g2'?L.g2.r:'');}
+function render(){const sc=$app.querySelector('.scroll'),top=sc?sc.scrollTop:0,key=screenKey();
+ let html=!S.p.onboarded?vWelcome():S.route==='lesson'&&S.L?vLesson():vMain();
+ if(S.modal)html+=vModal();
+ $app.innerHTML=html;const n=$app.querySelector('.scroll');if(n&&key===lastKey)n.scrollTop=top;lastKey=key;
+ if(S.route==='words')filterWords();}
+
+document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||el.disabled)return;const f=A[el.dataset.act];if(f){e.preventDefault();f(el.dataset.arg,el);}});
+document.addEventListener('change',e=>{const el=e.target.closest('[data-change]');if(el&&A[el.dataset.change])A[el.dataset.change](el.value);});
+document.addEventListener('input',e=>{const el=e.target;if(el.id==='sayText'&&S.L&&S.L.sp){S.L.sp.text=el.value;if(S.L.sp.viaMic)S.L.sp.edited=true;updChk();}else if(el.id==='repNote'&&S.modal){S.modal.note=el.value;}else if(el.id==='wq'){S.wq=el.value;filterWords();}});
+document.addEventListener('keydown',e=>{if(S.route==='lesson'&&S.L&&S.L.step==='g3'&&S.L.g3.state==='run'){if(e.key==='ArrowRight'){e.preventDefault();A.g3ans('1');}else if(e.key==='ArrowLeft'){e.preventDefault();A.g3ans('0');}}});
+render();
+</script>
+</body>
+</html>
