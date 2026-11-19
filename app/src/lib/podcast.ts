@@ -1,48 +1,48 @@
 import { PODCAST_NAME } from '../config';
 import { topicName, type Word } from '../data/words';
-import { cap, pick, shuffle, wordRe } from './util';
+import { pick, shuffle, wordRe } from './util';
 
 export type Host = 'Mia' | 'Leo';
 export interface PodLine { sp: Host; t: string; slow?: boolean }
 export interface QuizQ { prompt: string; quote?: string; answer: string; options: string[] }
 export interface Episode { title: string; lines: PodLine[]; quiz: QuizQ[]; source: 'claude' | 'template' }
 
-const intro = [
-  (w: Word) => `So, here's something that happened this week. ${w.ex}`,
-  (w: Word) => `I heard a great sentence today. ${w.ex}`,
-  (w: Word) => `Okay, next one. Imagine someone says this to you: ${w.ex}`,
-  (w: Word) => `Here's an example from real life. ${w.ex}`,
-  (w: Word) => `Let me tell you about my week. ${w.ex}`,
-];
-const react = ['Good word.', 'I like that one.', "That's a really useful one.", 'This one comes up a lot.', 'Nice choice.'];
-const posTip: Record<string, (w: Word) => string> = {
-  'n.': (w) => `It's a noun, so you can talk about "the ${w.w}".`,
-  'v.': () => "It's a verb, so you can use it in the past tense when you tell a story about yesterday.",
-  'adj.': () => "It's an adjective, so it describes a person or a thing.",
-  'adv.': () => "It's an adverb. You often hear it at the start of a sentence.",
-  'phr.': () => "It's a phrase, so learn it as one chunk. Native speakers use it all the time.",
+/** How the hosts open and close the chat for each topic. The show is a normal talk show, not a lesson. */
+const SETTINGS: Record<string, { open: string; reply: string; close: string }> = {
+  toeic: { open: 'Leo, you look tired. Busy week at work?', reply: 'So busy. Let me tell you about it.', close: "Well, I hope next week at work is calmer for both of us." },
+  office: { open: 'Leo, how are things at the new office?', reply: 'Honestly? A little chaotic. Here is what happened.', close: 'Same time next week, and hopefully with fewer office stories.' },
+  business: { open: 'Leo, I heard your cousin is starting a business. How is it going?', reply: 'It is a wild ride. Listen to this.', close: 'Tell your cousin good luck from me.' },
+  travel: { open: 'Leo, you just got back from a trip, right? How was it?', reply: 'Great, but a few things went wrong. Here is the story.', close: 'Next time, I am coming with you.' },
+  shopping: { open: 'Leo, is that a new jacket? Did you go shopping?', reply: 'I did, and it was quite an adventure.', close: 'Maybe we should go shopping together next weekend.' },
+  finance: { open: 'Leo, are you still trying to save money this year?', reply: 'Trying is the right word. Let me explain.', close: 'Okay, I am going to check my budget tonight.' },
+  conversation: { open: 'Leo, what is new with you? We have not talked in ages.', reply: 'So much! Where do I start?', close: 'It was great to catch up, Leo.' },
+  movies: { open: 'Leo, did you see any good movies this week?', reply: 'I did, and I have a lot to say.', close: 'Okay, movie night at your place next Friday.' },
+  music: { open: 'Leo, what have you been listening to lately?', reply: 'Oh, I have a story about that.', close: 'Send me that playlist after the show.' },
 };
-const memo = ['Try saying it out loud three times.', 'Write it in your notebook tonight.', 'Try to use it in a message to a friend this week.', 'Notice when you hear it in movies or at work.', 'Say it slowly first, then a little faster.'];
+const DEFAULT_SETTING = { open: 'Leo, how was your week?', reply: 'Interesting! A lot happened.', close: 'Let us talk again next week.' };
+const LEAD = ['So, here is the first thing.', 'Oh, and then this happened.', 'Okay, you will like this part.', 'And guess what?', 'Then, on the last day,'];
+const REACT = ['Really? Then what?', 'Ha! That sounds familiar.', 'Wait, seriously?', 'Oh no. How did that go?', 'Wow. I did not expect that.'];
+const FOLLOW = ['Yeah, it was a small thing, but I keep thinking about it.', 'Exactly. That is what I said too.', 'I know! It worked out in the end, though.', 'Pretty well, actually. Better than I thought.', 'Me neither. It was a surprise.'];
 
 /** Offline episode built from templates. The server version asks Claude for a fresh story. */
 export function templateEpisode(words: Word[], topic: string): Episode {
   const lines: PodLine[] = [];
-  const L = (sp: Host, t: string, slow = false) => lines.push({ sp, t, slow });
-  const tn = topic === 'mywords' ? 'your saved words' : topicName(topic).toLowerCase();
-  L('Mia', `Hi everyone, and welcome to ${PODCAST_NAME}, the five-minute English show where you hear new words in real conversation. I'm Mia.`);
-  L('Leo', `And I'm Leo. Today we're talking about ${tn}, and we have ${words.length} useful words for you. Listen carefully, because there's a short quiz at the end.`);
-  L('Mia', "That's right. Don't worry if you don't catch everything the first time. Just relax and listen for the words you chose.");
+  const L = (sp: Host, t: string) => lines.push({ sp, t });
+  const set = SETTINGS[topic] ?? DEFAULT_SETTING;
+  L('Mia', `Hi, and welcome back to ${PODCAST_NAME}. I'm Mia.`);
+  L('Leo', "And I'm Leo. Good to be here.");
+  L('Mia', set.open);
+  L('Leo', set.reply);
   words.forEach((w, i) => {
-    const a: Host = i % 2 ? 'Leo' : 'Mia';
-    const b: Host = i % 2 ? 'Mia' : 'Leo';
-    L(a, intro[i % intro.length](w));
-    L(b, `${cap(w.w)}. ${react[i % react.length]} ${cap(w.w)} means ${w.def}.`);
-    L(a, `${(posTip[w.pos] ?? posTip['phr.'])(w)} ${memo[i % memo.length]}`);
-    L(b, `Let me say it slowly for our listeners. ${w.ex}`, true);
+    const a: Host = i % 2 ? 'Mia' : 'Leo';
+    const b: Host = i % 2 ? 'Leo' : 'Mia';
+    L(a, `${LEAD[i % LEAD.length]} ${w.ex}`);
+    L(b, REACT[i % REACT.length]);
+    L(a, FOLLOW[i % FOLLOW.length]);
   });
-  L('Mia', `Let's do a quick review. Today's words were: ${words.map((w) => w.w).join(', ')}.`);
-  L('Leo', `Great job listening today. Now try the quiz and see how much you remember. See you next time on ${PODCAST_NAME}!`);
-  return { title: topic === 'mywords' ? 'Your saved words' : topicName(topic), lines, quiz: templateQuiz(words), source: 'template' };
+  L('Mia', set.close);
+  L('Leo', `Thanks for listening to ${PODCAST_NAME}. See you next time!`);
+  return { title: topic === 'mywords' ? 'Catching Up' : topicName(topic), lines, quiz: templateQuiz(words), source: 'template' };
 }
 
 export function templateQuiz(words: Word[], rand: () => number = Math.random): QuizQ[] {
@@ -52,7 +52,7 @@ export function templateQuiz(words: Word[], rand: () => number = Math.random): Q
   ws.filter((w) => wordRe(w.w).test(w.ex)).slice(0, 3).forEach((w) =>
     qs.push({ prompt: 'Complete the sentence you heard in the podcast.', quote: w.ex.replace(wordRe(w.w), '_____'), answer: w.w, options: shuffle([w.w, ...others(w)], rand) }));
   ws.filter((w) => !qs.some((q) => q.answer === w.w)).slice(0, 5 - qs.length).forEach((w) =>
-    qs.push({ prompt: `One of the hosts explained a word as “${w.def}.” Which word was it?`, answer: w.w, options: shuffle([w.w, ...others(w)], rand) }));
+    qs.push({ prompt: `Which of your words means “${w.def}”?`, answer: w.w, options: shuffle([w.w, ...others(w)], rand) }));
   return shuffle(qs, rand);
 }
 

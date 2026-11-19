@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Button, Card, Icon, IconButton, Logo, MasteryDots, Pill, PillText, Row, Screen, s, T } from '@/components/ui';
 import { topicName } from '@/data/words';
 import { speak } from '@/lib/speech';
-import { useLesson } from '@/store/lesson';
+import { LESSON_SIZE, useLesson } from '@/store/lesson';
 import { useProgress } from '@/store/progress';
 import { useUi } from '@/store/ui';
 import { C, F } from '@/theme';
@@ -25,7 +25,7 @@ export default function MyWords() {
   const list = all.filter((w) => (filter === 'all' || (filter === 'mastered' ? w.mastery >= 3 : w.mastery < 3)) && (!query || `${w.w} ${w.zh} ${w.def}`.toLowerCase().includes(query)));
 
   const practice = () => {
-    const ws = [...all].sort((a, b) => a.mastery - b.mastery || a.added - b.added).slice(0, 10).map(({ mastery: _m, added: _a, seen: _s, ...w }) => w);
+    const ws = [...all].sort((a, b) => a.mastery - b.mastery || a.added - b.added).slice(0, LESSON_SIZE).map(({ mastery: _m, added: _a, seen: _s, ...w }) => w);
     start(ws);
     router.push('/lesson');
   };
@@ -40,7 +40,7 @@ export default function MyWords() {
         {all.length >= 4 && (
           <Card style={{ gap: 10 }}>
             <Row><Icon name="trophy" color={C.teal} /><T v="h3">Practice my words</T></Row>
-            <T v="small">Review the {Math.min(10, all.length)} words you know least, with all three exercises.</T>
+            <T v="small">Review the {Math.min(LESSON_SIZE, all.length)} words you know least, with all three exercises.</T>
             <Button title="Start review" kind="teal" onPress={practice} />
           </Card>
         )}

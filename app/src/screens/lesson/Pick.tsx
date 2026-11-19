@@ -6,7 +6,7 @@ import { Button, Icon, IconButton, Note, Row, T } from '../../components/ui';
 import { LEVELS, topicName, type Word } from '../../data/words';
 import { tap } from '../../lib/haptics';
 import { speak } from '../../lib/speech';
-import { neededCount, useLesson } from '../../store/lesson';
+import { LESSON_SIZE, neededCount, useLesson } from '../../store/lesson';
 import { useProgress } from '../../store/progress';
 import { useUi } from '../../store/ui';
 import { C, F } from '../../theme';
@@ -72,7 +72,8 @@ export default function Pick() {
           {topicName(topic)}{random ? ' (random)' : ''} · {LEVELS[level].name}. Pick words that are new or that you want to practice. They move to My Words.
         </T>
       </View>
-      {pool.length < 10 && <Note>{`Only ${pool.length} words are left in this list, so this lesson will use ${need}.`}</Note>}
+      <T v="small">After you choose, you can tap Vocabulary, Speaking, or Listening at the top to jump to that part, or skip any exercise.</T>
+      {pool.length < LESSON_SIZE && <Note>{`Only ${pool.length} words are left in this list, so this lesson will use ${need}.`}</Note>}
       <Row gap={8} style={{ flexWrap: 'wrap' }}>
         <Button small kind="secondary" icon="shuffle" title="Auto-pick" onPress={autoPick} disabled={n >= need} />
         <Button small kind="secondary" title={`中 ${showZh ? 'Hide' : 'Show'} Chinese`} onPress={() => setShowZh(!showZh)} />

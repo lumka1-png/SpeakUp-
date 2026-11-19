@@ -62,6 +62,7 @@ export function cleanEpisode(out: EpisodeOutput, req: EpisodeRequest): EpisodeOu
   if (lines.length < 10 || quiz.length < 3) throw new AiUnavailable('episode failed validation');
   const text = lines.map((l) => l.text.toLowerCase()).join(' ');
   const missing = req.words.filter((w) => !text.includes(w.w.toLowerCase().split(' ')[0]));
-  if (missing.length > 2) throw new AiUnavailable(`episode is missing words: ${missing.map((w) => w.w).join(', ')}`);
+  // Allow one missing word per five (the podcast hides words in natural talk, but every word should be there).
+  if (missing.length > Math.floor(req.words.length / 5)) throw new AiUnavailable(`episode is missing words: ${missing.map((w) => w.w).join(', ')}`);
   return { title: out.title, lines, quiz };
 }

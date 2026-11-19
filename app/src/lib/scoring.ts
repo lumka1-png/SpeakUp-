@@ -1,25 +1,44 @@
 import { dayStr } from './util';
 
 export interface Scores { g1: number; g2: number; g3: number; speak: number; listen: number }
-export interface WordPerf { g1: boolean; g2Misses: number; spoke: boolean }
+/** How the learner did with one word. A missing field means that part was skipped. */
+export interface WordPerf { g1?: boolean; g2Misses?: number; spoke?: boolean }
 
-export const vocabScore = (s: Pick<Scores, 'g1' | 'g2' | 'g3'>) => Math.round((s.g1 + s.g2 + s.g3) / 3);
-export const lessonScore = (s: Scores) => Math.round(vocabScore(s) * 0.4 + s.speak * 0.3 + s.listen * 0.3);
+const avg = (xs: (number | undefined)[]) => {
+  const v = xs.filter((x): x is number => x != null);
+  return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : undefined;
+};
+/** Average of the vocabulary games that were played, or undefined if all were skipped. */
+export const vocabScore = (s: Partial<Scores>) => avg([s.g1, s.g2, s.g3]);
+/** Vocabulary 40%, Speaking 30%, Listening 30%, counting only the parts that were done. */
+export function lessonScore(s: Partial<Scores>): number {
+  const parts: [number | undefined, number][] = [[vocabScore(s), 0.4], [s.speak, 0.3], [s.listen, 0.3]];
+  const done = parts.filter((p): p is [number, number] => p[0] != null);
+  const weight = done.reduce((a, [, w]) => a + w, 0);
+  return weight ? Math.round(done.reduce((a, [v, w]) => a + v * w, 0) / weight) : 0;
+}
 export const starsFor = (score: number) => (score >= 90 ? 3 : score >= 70 ? 2 : score >= 50 ? 1 : 0);
 export const xpFor = (score: number, wordCount: number) => score + wordCount * 5;
 export const matchScore = (mistakes: number) => Math.max(0, 100 - mistakes * 10);
 /** Quick Think: accuracy, scaled down when fewer than 10 answers were given. */
 export const quickScore = (correct: number, attempts: number) =>
   attempts ? Math.round((correct / attempts) * 100 * Math.min(1, attempts / 10)) : 0;
-/** One speaking item: 60% grammar + 40% pronunciation when recorded, grammar only when typed. */
-export const speakItemScore = (grammar: number, pron: number | null) => (pron == null ? grammar : Math.round(grammar * 0.6 + pron * 0.4));
+/**
+ * One speaking item: 60% grammar + 40% pronunciation when recorded, grammar only when typed.
+ * A sentence that uses the word with the wrong meaning scores at most 40, however good the grammar.
+ */
+export function speakItemScore(grammar: number, pron: number | null, meaningOk?: boolean): number {
+  const score = pron == null ? grammar : Math.round(grammar * 0.6 + pron * 0.4);
+  return meaningOk === false ? Math.min(40, score) : score;
+}
 export const scoreLabel = (s: number) => (s >= 90 ? 'Outstanding!' : s >= 75 ? 'Great job!' : s >= 60 ? 'Nice work!' : 'Good effort!');
 
-/** New mastery (0 to 3) for a word after a lesson. */
+/** New mastery (0 to 3) for a word after a lesson. Skipped parts neither help nor hurt. */
 export function nextMastery(current: number, perf: WordPerf): number {
-  const earned = (perf.g1 ? 1 : 0) + (perf.g2Misses === 0 ? 1 : 0) + (perf.spoke ? 1 : 0);
+  const results = [perf.g1, perf.g2Misses == null ? undefined : perf.g2Misses === 0, perf.spoke].filter((x): x is boolean => x != null);
+  const earned = results.filter(Boolean).length;
   if (earned >= 2) return Math.min(3, current + 1);
-  if (earned === 0) return Math.max(0, current - 1);
+  if (results.length && earned === 0) return Math.max(0, current - 1);
   return current;
 }
 

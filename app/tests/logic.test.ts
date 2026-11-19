@@ -61,6 +61,10 @@ test('sound tips target Mandarin speaker difficulties', () => {
 test('scoring formulas', () => {
   assert.equal(lessonScore({ g1: 100, g2: 100, g3: 100, speak: 100, listen: 100 }), 100);
   assert.equal(lessonScore({ g1: 60, g2: 90, g3: 30, speak: 50, listen: 80 }), 63);
+  // Skipped parts are left out, and the remaining weights are scaled up.
+  assert.equal(lessonScore({ speak: 80 }), 80);
+  assert.equal(lessonScore({ g1: 100, speak: 50 }), 79);
+  assert.equal(lessonScore({}), 0);
   assert.deepEqual([starsFor(95), starsFor(75), starsFor(55), starsFor(30)], [3, 2, 1, 0]);
   assert.equal(matchScore(3), 70);
   assert.equal(matchScore(20), 0);
@@ -76,6 +80,10 @@ test('mastery and streaks', () => {
   assert.equal(nextMastery(3, { g1: true, g2Misses: 0, spoke: true }), 3);
   assert.equal(nextMastery(1, { g1: false, g2Misses: 2, spoke: false }), 0);
   assert.equal(nextMastery(1, { g1: true, g2Misses: 1, spoke: false }), 1);
+  // Skipped parts neither help nor hurt.
+  assert.equal(nextMastery(2, {}), 2);
+  assert.equal(nextMastery(1, { g1: true, spoke: true }), 2);
+  assert.equal(nextMastery(1, { spoke: false }), 0);
   const now = new Date(2026, 10, 19, 10);
   assert.deepEqual(nextStreak(4, '2026-11-18', now), { streak: 5, lastDay: '2026-11-19' });
   assert.deepEqual(nextStreak(4, '2026-11-19', now), { streak: 4, lastDay: '2026-11-19' });
@@ -88,7 +96,8 @@ test('template podcast and quiz use every word', () => {
   const text = ep.lines.map((l) => l.t).join(' ');
   for (const w of words) assert.ok(wordRe(w.w).test(text), `${w.w} missing from podcast`);
   const mins = episodeSeconds(ep.lines, ep.lines.length, 1) / 60;
-  assert.ok(mins > 3.5 && mins < 7, `episode length ${mins} minutes`);
+  assert.ok(mins > 0.8 && mins < 7, `episode length ${mins} minutes`);
+  assert.ok(!/\b(means|vocabulary|the word|today's words)\b/i.test(text), 'the offline podcast should not teach the words');
   const quiz = templateQuiz(words);
   assert.equal(quiz.length, 5);
   for (const q of quiz) {

@@ -7,7 +7,7 @@ import type { EpisodeOutput } from '../src/schemas';
 import { DailyLimiter, memoryReportStore } from '../src/store';
 
 const ID = 'abc123-test';
-const fakeFeedback = { usedTargetWordCorrectly: true, grammarScore: 90, issues: [], correctedSentence: 'Hi.', naturalVersion: 'Hi.', suspectedMispronunciations: [], encouragement: 'Nice!' };
+const fakeFeedback = { usedTargetWord: true, meaningCorrect: true, meaningExplanation: '', meaningExplanationZh: '', grammarScore: 90, issues: [], correctedSentence: 'Hi.', naturalVersion: 'Hi.', suspectedMispronunciations: [], encouragement: 'Nice!' };
 const fakeAi = (over: Partial<Ai> = {}): Ai => ({ feedback: async () => fakeFeedback, episode: async () => ({ title: 't', lines: [], quiz: [] }), ...over });
 const post = (app: ReturnType<typeof createApp>, path: string, body: unknown, id: string | null = ID) =>
   app.request(path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(id ? { 'X-Install-Id': id } : {}) }, body: JSON.stringify(body) });

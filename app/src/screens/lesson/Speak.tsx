@@ -74,7 +74,7 @@ export default function Speak() {
 
   const advance = (feedback: Feedback | null) => {
     const pron = feedback ? (readBack ? readBack.score : feedback.pronScore) : null;
-    addSpoken({ wordId: w.id, feedback, score: feedback ? speakItemScore(feedback.grammarScore, pron) : 0 });
+    addSpoken({ wordId: w.id, feedback, score: feedback ? speakItemScore(feedback.grammarScore, pron, feedback.meaningOk) : 0 });
     stopSpeaking();
     if (i + 1 >= words.length) { finishSpeak(); return; }
     setI(i + 1);
@@ -145,13 +145,24 @@ export default function Speak() {
             </View>
           </Row>
           {pron == null && <T v="small">Pronunciation is measured when you record with the microphone. Typed sentences get grammar feedback only.</T>}
-          {fb.encouragement ? <T v="bodyBold">{fb.encouragement}</T> : null}
+          {fb.meaningOk === false ? (
+            <View accessibilityRole="alert" style={{ backgroundColor: C.badTint, borderRadius: 16, padding: 12, gap: 4 }}>
+              <T v="bodyBold" style={{ color: '#8A1C16' }}>{`Check the meaning of “${w.w}”`}</T>
+              <T v="small" style={{ color: C.ink }}>{fb.meaningNote?.msg ?? `Your grammar may be fine, but “${w.w}” means: ${w.def}. Try a sentence that shows this meaning.`}</T>
+              {fb.meaningNote?.zh ? <T v="zh" muted style={{ fontSize: 13.5 }}>{fb.meaningNote.zh}</T> : <T v="zh" muted style={{ fontSize: 13.5 }}>{`「${w.w}」的意思是：${w.zh}`}</T>}
+            </View>
+          ) : fb.meaningOk ? (
+            <T v="smallBold" style={{ color: C.okDark }}>{`✓ You used “${w.w}” with the right meaning.`}</T>
+          ) : (
+            <T v="small">{`Offline check: grammar only. Make sure your sentence shows that “${w.w}” means “${w.def}”. Meaning is checked when you're online.`}</T>
+          )}
+          {fb.encouragement && fb.meaningOk !== false ? <T v="bodyBold">{fb.encouragement}</T> : null}
           {fb.issues.length ? fb.issues.map((x, k) => (
             <Card key={k} style={{ padding: 12, borderRadius: 14 }}>
               <T v="bodyBold" style={{ fontSize: 14.5 }}>{x.msg}</T>
               <T v="zh" muted style={{ fontSize: 13.5 }}>{x.zh}</T>
             </Card>
-          )) : (
+          )) : fb.meaningOk === false ? null : (
             <View style={{ backgroundColor: C.okTint, borderRadius: 16, padding: 12 }}><T v="bodyBold" style={{ color: C.okDark }}>Great sentence! The grammar is clear and correct.</T></View>
           )}
           {fb.corrected !== fb.original && (

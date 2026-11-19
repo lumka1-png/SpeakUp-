@@ -83,6 +83,7 @@ export default function Listen() {
   const [finished, setFinished] = useState(false);
   const [rate, setRate] = useState(1);
   const [showT, setShowT] = useState(false);
+  const [audioFailed, setAudioFailed] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const live = useRef({ idx: 0, playing: false, rate: 1 });
 
@@ -106,12 +107,15 @@ export default function Listen() {
       host: lines[i].sp,
       rate: (lines[i].slow ? 0.8 : 1) * live.current.rate,
       onEnd: () => { if (live.current.playing && live.current.idx === i) playRef.current(i + 1); },
+      // Speech could not play: stop and explain, instead of racing through every line in silence.
+      onFail: () => { live.current.playing = false; setPlaying(false); setAudioFailed(true); setShowT(true); },
     });
   };
   useEffect(() => { playRef.current = playFrom; });
 
   const toggle = () => {
     if (!episode) return;
+    setAudioFailed(false);
     if (playing) { live.current.playing = false; setPlaying(false); stopSpeaking(); return; }
     live.current.playing = true;
     setPlaying(true);
@@ -140,7 +144,7 @@ export default function Listen() {
       <View>
         <T v="eyebrow">Step 3 · Listening</T>
         <T v="h2" accessibilityRole="header" style={{ marginTop: 6 }}>Your mini podcast</T>
-        <T muted style={{ marginTop: 6 }}>Listen for your {words.length} words. Each one lights up when you hear it.</T>
+        <T muted style={{ marginTop: 6 }}>Mia and Leo chat about everyday life, and your {words.length} words are hidden in the conversation. Each one lights up when you hear it.</T>
       </View>
       <View style={{ backgroundColor: C.ink, borderRadius: 24, padding: 20, minHeight: 170, justifyContent: 'flex-end', overflow: 'hidden' }}>
         <View style={{ position: 'absolute', right: 20, top: 22, flexDirection: 'row', gap: 6, alignItems: 'center', height: 80 }} accessibilityElementsHidden>
@@ -150,6 +154,13 @@ export default function Listen() {
         <Text style={{ fontFamily: F.display, fontSize: 24, lineHeight: 28, color: C.white }}>{PODCAST_NAME}:{'\n'}{episode.title}</Text>
         <Text style={{ fontFamily: F.bodySemi, color: '#D9DAE8' }}>with Mia and Leo · {fmtTime(total)}</Text>
       </View>
+      {audioFailed && (
+        <View accessibilityRole="alert" style={{ backgroundColor: C.badTint, borderRadius: 16, padding: 12, gap: 4 }}>
+          <T v="bodyBold" style={{ color: '#8A1C16' }}>{"The audio didn't play on this device."}</T>
+          <T v="small" style={{ color: C.ink }}>Check that your volume is up and your phone is not on silent, then tap play again. If it still does not play, read along with the transcript below, or try another browser such as Chrome or Edge.</T>
+          <T v="zh" muted style={{ fontSize: 13.5 }}>無法播放聲音。請確認音量已打開、手機沒有靜音，再按一次播放。如果還是沒有聲音，可以先看下方的逐字稿。</T>
+        </View>
+      )}
       <Card style={{ gap: 8 }}>
         <View style={{ height: 8, borderRadius: 999, backgroundColor: C.track, overflow: 'hidden' }}>
           <View style={{ width: `${(idx / episode.lines.length) * 100}%`, height: '100%', backgroundColor: C.coral }} />

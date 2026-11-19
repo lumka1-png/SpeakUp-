@@ -52,12 +52,13 @@ export default function Done() {
   }, []);
   if (!result) return null;
 
-  const bar = (label: string, v: number, color: string) => (
+  const bar = (label: string, v: number | undefined, color: string) => (
     <View style={{ gap: 5 }}>
-      <Row style={{ justifyContent: 'space-between' }}><T v="bodyBold" style={{ fontSize: 14 }}>{label}</T><T v="bodyBold" style={{ fontSize: 14 }}>{v}%</T></Row>
-      <Meter value={v} color={color} />
+      <Row style={{ justifyContent: 'space-between' }}><T v="bodyBold" style={{ fontSize: 14 }}>{label}</T><T v="bodyBold" style={{ fontSize: 14 }}>{v == null ? 'Skipped' : `${v}%`}</T></Row>
+      <Meter value={v ?? 0} color={color} />
     </View>
   );
+  const pct = (v: number | undefined) => (v == null ? 'skipped' : `${v}%`);
 
   return (
     <Screen>
@@ -78,9 +79,10 @@ export default function Done() {
         <Card style={{ gap: 12 }}>
           <T v="h3">Your scores</T>
           {bar('Vocabulary', result.vocab, C.teal)}
-          <T v="small" style={{ marginTop: -6 }}>Chinese meaning {scores.g1}% · Match {scores.g2}% · Quick Think {scores.g3}%</T>
-          {bar('Speaking', scores.speak ?? 0, C.coral)}
-          {bar('Listening', scores.listen ?? 0, C.violet)}
+          <T v="small" style={{ marginTop: -6 }}>Chinese meaning {pct(scores.g1)} · Match {pct(scores.g2)} · Quick Think {pct(scores.g3)}</T>
+          {bar('Speaking', scores.speak, C.coral)}
+          {bar('Listening', scores.listen, C.violet)}
+          {[result.vocab, scores.speak, scores.listen].some((v) => v == null) && <T v="small">Your lesson score counts only the parts you did.</T>}
         </Card>
         <Card style={{ gap: 8 }}>
           <T v="h3">{practice ? 'Words you reviewed' : 'Saved to My Words'}</T>

@@ -26,7 +26,12 @@ export const hasServer = () => API_URL.length > 0;
 /* ---------------- Speaking feedback ---------------- */
 
 interface RemoteFeedback {
-  usedTargetWordCorrectly: boolean;
+  usedTargetWord?: boolean;
+  meaningCorrect?: boolean;
+  meaningExplanation?: string;
+  meaningExplanationZh?: string;
+  /** Older servers return one combined flag instead of the three above. */
+  usedTargetWordCorrectly?: boolean;
   grammarScore: number;
   issues: { explanation: string; explanationZh: string }[];
   correctedSentence: string;
@@ -49,15 +54,19 @@ export async function getFeedback(p: {
       level: p.level,
     }, p.installId, 25_000);
     const misp = (r.suspectedMispronunciations ?? []).slice(0, 3);
+    const usedWord = r.usedTargetWord ?? r.usedTargetWordCorrectly ?? local.usedWord;
+    const meaningOk = r.meaningCorrect ?? r.usedTargetWordCorrectly;
     let pron: number | null = null;
-    if (p.viaMic) pron = Math.max(40, estimatePronunciation(p.confidence, r.usedTargetWordCorrectly) - misp.length * 8);
+    if (p.viaMic) pron = Math.max(40, estimatePronunciation(p.confidence, usedWord) - misp.length * 8);
     return {
       source: 'claude',
       original: local.original,
       corrected: r.correctedSentence || local.corrected,
       natural: r.naturalVersion && r.naturalVersion !== r.correctedSentence ? r.naturalVersion : undefined,
       issues: (r.issues ?? []).map((i) => ({ msg: i.explanation, zh: i.explanationZh })),
-      usedWord: r.usedTargetWordCorrectly,
+      usedWord,
+      meaningOk,
+      meaningNote: meaningOk === false && r.meaningExplanation ? { msg: r.meaningExplanation, zh: r.meaningExplanationZh ?? '' } : undefined,
       grammarScore: Math.max(0, Math.min(100, Math.round(r.grammarScore))),
       pronScore: pron,
       mispronunciations: misp,

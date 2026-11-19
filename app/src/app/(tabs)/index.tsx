@@ -12,7 +12,7 @@ import { C } from '@/theme';
 
 
 const STEPS: { icon: IconName; bg: string; fg: string; title: string; body: string }[] = [
-  { icon: 'book', bg: C.tealTint, fg: C.tealDark, title: '1. Vocabulary', body: 'Choose 10 words, then play 3 quick games.' },
+  { icon: 'book', bg: C.tealTint, fg: C.tealDark, title: '1. Vocabulary', body: 'Choose 5 words, then play 3 quick games.' },
   { icon: 'mic', bg: C.coralTint, fg: C.coralDark, title: '2. Speaking', body: 'Say a sentence with each word and get feedback.' },
   { icon: 'headphones', bg: C.sunTint, fg: '#6B4A00', title: '3. Listening', body: 'Hear your words in a 5-minute podcast, then take a quiz.' },
 ];
@@ -42,7 +42,7 @@ export default function Home() {
         <View>
           <T v="eyebrow">{greeting()}</T>
           <T v="h1" accessibilityRole="header" style={{ marginTop: 6 }}>{"Ready for today's lesson?"}</T>
-          <T muted style={{ marginTop: 6 }}>Learn 10 words, say them out loud, then hear them in a mini podcast.</T>
+          <T muted style={{ marginTop: 6 }}>Learn 5 words, say them out loud, then hear them in a mini podcast.</T>
         </View>
         <Card style={{ gap: 14 }}>
           <Select label="Your level" value={String(level)} options={levelOptions} onChange={(v) => setLevel(Number(v))} />
@@ -64,7 +64,7 @@ export default function Home() {
               <View style={{ flex: 1 }}><T v="h3">{st.title}</T><T v="small">{st.body}</T></View>
             </Row>
           ))}
-          <T v="small">About 15 to 20 minutes per lesson.</T>
+          <T v="small">About 10 to 15 minutes per lesson.</T>
         </View>
         {history.length > 0 && (
           <Card>
