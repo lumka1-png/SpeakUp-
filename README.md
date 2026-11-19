@@ -84,8 +84,10 @@ Restart `npx expo start` after changing `.env`.
 Each install is limited per day (150 feedback checks, 12 episodes, 100 reports) to
 protect your API budget. Change `DEFAULT_LIMITS` in `server/src/app.ts`.
 
-The model defaults to `claude-opus-5-5`. To compare cost and quality, set
-`CLAUDE_MODEL=claude-haiku-5-5` in `.env` (see SPEC.md, section 15).
+The model defaults to `claude-haiku-5-5` (fast and low cost). For richer episodes, set
+`CLAUDE_MODEL=claude-opus-5-5` in `.env` (see SPEC.md, section 15). Episodes take
+about 25 to 45 seconds to write with either model; the Listening screen shows a
+progress message and offers a quick offline episode after 20 seconds.
 
 ### Deploy the server
 

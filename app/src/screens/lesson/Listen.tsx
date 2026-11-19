@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
-import { Button, Card, Chip, IconButton, Icon, Row, T } from '../../components/ui';
+import { Button, Card, Chip, IconButton, Icon, Meter, Row, T } from '../../components/ui';
 import { PODCAST_NAME } from '../../config';
 import { episodeSeconds, wordsInLine } from '../../lib/podcast';
 import { speak, stopSpeaking } from '../../lib/speech';
 import { fmtTime, wordRe } from '../../lib/util';
-import { prefetchEpisode, useLesson } from '../../store/lesson';
+import { episodeWaitStart, playQuickEpisode, prefetchEpisode, useLesson } from '../../store/lesson';
 import { useProgress } from '../../store/progress';
+import type { Word } from '../../data/words';
 import { C, F } from '../../theme';
 import { Shell } from './Shell';
 
@@ -20,6 +21,57 @@ function Highlighted({ text, words }: { text: string; words: string[] }) {
     <Text style={{ fontFamily: F.body, fontSize: 15, lineHeight: 22, color: C.ink }}>
       {parts.map((p, i) => (i % 2 ? <Text key={i} style={{ fontFamily: F.bodyHeavy, textDecorationLine: 'underline', textDecorationColor: C.sun }}>{p}</Text> : p))}
     </Text>
+  );
+}
+
+/** Episodes usually take 25 to 45 seconds to write. Messages follow the typical wait. */
+const WAIT_STEPS: [number, string][] = [
+  [0, 'Choosing a story for your topic…'],
+  [8, 'Writing what Mia and Leo say…'],
+  [20, 'Putting all of your words into the story…'],
+  [32, 'Writing your quiz questions…'],
+  [45, 'Almost ready. Long episodes take a little longer…'],
+];
+const QUICK_AFTER = 20;
+
+/** Estimated progress that slows down near the end and never reaches 100% before the episode arrives. */
+const waitProgress = (sec: number) => 95 * (1 - Math.exp(-sec / 22));
+
+function EpisodeLoading({ words }: { words: Word[] }) {
+  const [sec, setSec] = useState(() => Math.floor((Date.now() - episodeWaitStart()) / 1000));
+  useEffect(() => {
+    const t = setInterval(() => setSec(Math.floor((Date.now() - episodeWaitStart()) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const message = [...WAIT_STEPS].reverse().find(([at]) => sec >= at)![1];
+
+  return (
+    <Shell progress={0.72} footer={sec >= QUICK_AFTER
+      ? <Button kind="secondary" title="Play a quick episode now" icon="play" onPress={playQuickEpisode}
+          label="Play a quick episode now instead of waiting. It uses a simpler, ready-made story." />
+      : undefined}>
+      <View style={{ alignItems: 'center', gap: 10, paddingTop: 28 }}>
+        <ActivityIndicator size="large" color={C.coral} />
+        <T v="h3" style={{ textAlign: 'center' }}>Writing your podcast</T>
+        <T muted style={{ textAlign: 'center' }}>Mia and Leo are preparing a new episode with all of your words. This takes about 30 seconds.</T>
+      </View>
+      <View style={{ gap: 8, marginTop: 18 }} accessible accessibilityRole="progressbar"
+        accessibilityLabel="Podcast loading" accessibilityValue={{ min: 0, max: 100, now: Math.round(waitProgress(sec)) }}>
+        <Meter value={waitProgress(sec)} />
+        <T v="smallBold" style={{ textAlign: 'center' }} accessibilityLiveRegion="polite">{message}</T>
+      </View>
+      <Card style={{ marginTop: 18, gap: 10 }}>
+        <T v="h3">While you wait: your words</T>
+        <T v="small" muted>Listen for these words in the episode.</T>
+        {words.map((w) => (
+          <View key={w.id} style={{ gap: 2 }}>
+            <Text style={{ fontFamily: F.bodyHeavy, fontSize: 16, color: C.ink }}>{w.w} <Text style={{ fontFamily: F.body, color: C.muted }}>{w.pos} {w.zh}</Text></Text>
+            <T v="small" muted>{w.def}</T>
+          </View>
+        ))}
+      </Card>
+      {sec >= QUICK_AFTER && <T v="small" muted style={{ textAlign: 'center', marginTop: 12 }}>Don&apos;t want to wait? The quick episode uses a simpler story.</T>}
+    </Shell>
   );
 }
 
@@ -79,17 +131,7 @@ export default function Listen() {
 
   const toQuiz = () => { live.current.playing = false; stopSpeaking(); useLesson.setState({ step: 'quiz' }); };
 
-  if (!episode) {
-    return (
-      <Shell progress={0.72}>
-        <View style={{ alignItems: 'center', gap: 12, paddingTop: 60 }}>
-          <ActivityIndicator size="large" color={C.coral} />
-          <T v="h3">Writing your podcast…</T>
-          <T muted style={{ textAlign: 'center' }}>Mia and Leo are preparing an episode with all of your words.</T>
-        </View>
-      </Shell>
-    );
-  }
+  if (!episode) return <EpisodeLoading words={words} />;
 
   const total = episodeSeconds(episode.lines, episode.lines.length, rate);
   const elapsed = episodeSeconds(episode.lines, idx, rate);

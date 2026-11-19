@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { getPool, LEVELS, topicName, TOPIC_IDS, type Word } from '../data/words';
 import type { Feedback } from '../lib/analyze';
 import { getEpisode } from '../lib/api';
-import type { Episode } from '../lib/podcast';
+import { type Episode, templateEpisode } from '../lib/podcast';
 import { affirmation, lessonScore, matchScore, quickScore, scoreLabel, speakItemScore, starsFor, vocabScore, xpFor, type Scores, type WordPerf } from '../lib/scoring';
 import { pick } from '../lib/util';
 import { useProgress } from './progress';
@@ -144,16 +144,31 @@ function initPerf(words: Word[]): Record<string, WordPerf> {
   return Object.fromEntries(words.map((w) => [w.id, { g1: false, g2Misses: 0, spoke: false }]));
 }
 
+let episodeStartedAt = 0;
+/** When the current episode request started (ms), so the loading screen can show the real wait. */
+export const episodeWaitStart = () => episodeStartedAt || Date.now();
+
 /** Writes the podcast while the learner is speaking, so it is ready on time. */
 export function prefetchEpisode() {
   const s = useLesson.getState();
   if (s.episode || s.episodeLoading) return;
   const p = useProgress.getState();
+  episodeStartedAt = Date.now();
   useLesson.setState({ episodeLoading: true });
   const label = s.topic === 'mywords' ? 'a mix of everyday and work topics' : topicName(s.topic);
   getEpisode(s.words, s.topic, label, p.level, p.installId).then((episode) => {
-    if (useLesson.getState().words === s.words) useLesson.setState({ episode, episodeLoading: false });
+    const now = useLesson.getState();
+    if (now.words !== s.words) return;
+    // If the learner chose the quick episode while waiting, keep it: don't swap the story mid-listen.
+    useLesson.setState(now.episode ? { episodeLoading: false } : { episode, episodeLoading: false });
   });
+}
+
+/** Skip the wait and use the offline template episode. */
+export function playQuickEpisode() {
+  const s = useLesson.getState();
+  if (s.episode) return;
+  useLesson.setState({ episode: templateEpisode(s.words, s.topic) });
 }
 
 export { speakItemScore, LEVELS };

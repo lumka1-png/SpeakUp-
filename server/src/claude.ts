@@ -4,8 +4,8 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { EPISODE_SYSTEM, episodeUserMessage, FEEDBACK_SYSTEM, feedbackUserMessage } from './prompts';
 import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest, type FeedbackOutput, FeedbackOutput as FeedbackSchema, type FeedbackRequest } from './schemas';
 
-/** The model is configurable so you can compare quality and cost (for example claude-haiku-5-5). */
-export const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-5-5';
+/** The model is configurable so you can compare quality and cost (for example claude-opus-5-5 for richer episodes). */
+export const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-5-5';
 
 /** The Claude API key. SPEAKUP_CLAUDE_KEY is preferred (it does not clash with other tools that read ANTHROPIC_API_KEY). */
 export const apiKey = () => process.env.SPEAKUP_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY || '';

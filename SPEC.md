@@ -135,11 +135,11 @@ Claude reads text and images, not audio. So the device turns speech into text, a
 
 ### 9.4 Claude request design
 
-* **Model:** `claude-opus-5-5` (the default). Set effort to `low` for speaking feedback, since speed matters more than depth here.
+* **Model:** `claude-haiku-5-5` (the default, for speed and cost). `claude-opus-5-5` can be set with `CLAUDE_MODEL`. Set effort to `low` for speaking feedback, since speed matters more than depth here.
 * **Structured output** (`output_config.format` with a JSON schema) so the app always gets fields it can render:
   `{ usedTargetWordCorrectly, grammarScore, issues: [{ type, explanation, explanationZh }], correctedSentence, naturalVersion, suspectedMispronunciations: [{ heard, intended, tip, tipZh }], encouragement }`
 * **System prompt:** a stable prompt (learner level, first language Mandarin, Taiwan usage for Chinese, kind tone, under 60 words of feedback, never shame) placed first so prompt caching can apply. Per-request details (word, transcript, confidence) go last.
-* **Safety:** treat the learner's sentence as data, not instructions. Handle the `refusal` stop reason, and enable the server-side `fallbacks` option.
+* **Safety:** treat the learner's sentence as data, not instructions. Handle the `refusal` stop reason, and enable the server-side `fallbacks` option (Opus and Sonnet only; Haiku does not support it).
 
 ## 10. Listening
 
