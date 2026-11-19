@@ -9,7 +9,12 @@ import { wordRe } from '../src/lib/util';
 
 test('word data is complete and well formed', () => {
   assert.equal(TOPIC_IDS.length, 9);
-  assert.equal(ALL_WORDS.length, 240);
+  assert.equal(ALL_WORDS.length, 181 + 240);
+  // Every list needs at least 10 words per level (two 5-word lessons), and levels are 0 to 3.
+  for (const t of TOPIC_IDS) for (let l = 0; l < 4; l++) {
+    const n = wordsOf(t).filter((w) => w.lvl === l).length;
+    assert.ok(n >= 10, `${t} has only ${n} words at level ${l}`);
+  }
   for (const w of ALL_WORDS) {
     assert.ok(w.w && w.zh && w.def && w.ex, `missing field in ${w.id}`);
     assert.ok(['n.', 'v.', 'adj.', 'adv.', 'phr.'].includes(w.pos), `bad part of speech for ${w.id}`);
@@ -19,12 +24,21 @@ test('word data is complete and well formed', () => {
   assert.equal(new Set(ids).size, ids.length, 'duplicate words across lists');
 });
 
-test('pool hides saved words and puts the learner level first', () => {
+test('pool only offers unsaved words at the learner level', () => {
   const all = wordsOf('travel');
-  const pool = getPool(2, 'travel', { [all[0].id]: true });
-  assert.equal(pool.length, 19);
-  assert.ok(!pool.some((w) => w.id === all[0].id));
-  assert.ok(pool.slice(0, 5).every((w) => w.lvl === 2));
+  const beginner = all.filter((w) => w.lvl === 0);
+  const pool = getPool(0, 'travel', { [beginner[0].id]: true });
+  assert.equal(pool.length, beginner.length - 1);
+  assert.ok(pool.every((w) => w.lvl === 0), 'pool mixed in other levels');
+  assert.ok(!pool.some((w) => w.id === beginner[0].id));
+  assert.ok(getPool(3, 'travel', {}).every((w) => w.lvl === 3));
+  // A few spot checks on the level fixes.
+  const lvl = (w: string) => ALL_WORDS.find((x) => x.w === w)?.lvl;
+  assert.equal(lvl('catch up'), 1);
+  assert.equal(lvl('itinerary'), 2);
+  assert.equal(lvl('purchase'), 1);
+  assert.equal(lvl('invoice'), 2);
+  assert.equal(lvl('passport'), 0);
 });
 
 test('grammar rules fix common learner errors', () => {

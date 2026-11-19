@@ -163,7 +163,7 @@ export default function Speak() {
               <T v="zh" muted style={{ fontSize: 13.5 }}>{x.zh}</T>
             </Card>
           )) : fb.meaningOk === false ? null : (
-            <View style={{ backgroundColor: C.okTint, borderRadius: 16, padding: 12 }}><T v="bodyBold" style={{ color: C.okDark }}>Great sentence! The grammar is clear and correct.</T></View>
+            <View style={{ backgroundColor: C.okTint, borderRadius: 16, padding: 12 }}><T v="bodyBold" style={{ color: C.okDark }}>{fb.meaningOk ? 'Great sentence! The grammar is clear and correct.' : 'The grammar looks correct.'}</T></View>
           )}
           {fb.corrected !== fb.original && (
             <Row style={{ backgroundColor: C.okTint, borderRadius: 16, padding: 12 }}>

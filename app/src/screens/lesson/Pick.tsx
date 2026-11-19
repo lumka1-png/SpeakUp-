@@ -50,8 +50,8 @@ export default function Pick() {
     return (
       <Shell progress={0.02} footer={<Button title="Choose another topic" onPress={() => { useLesson.getState().quit(); router.back(); }} />}>
         <T v="eyebrow">Step 1 · Vocabulary</T>
-        <T v="h2">{"You've learned this list!"}</T>
-        <T muted>Only {pool.length} words are left in {topicName(topic)}. Choose another topic or level, or practice from My Words.</T>
+        <T v="h2">{`You've learned the ${LEVELS[level].name} words in ${topicName(topic)}!`}</T>
+        <T muted>{pool.length ? `Only ${pool.length} ${LEVELS[level].name} word${pool.length > 1 ? 's are' : ' is'} left here.` : 'There are no new words left at your level here.'} Choose another topic, move up a level on the home screen, or review your words in My Words.</T>
       </Shell>
     );
   }

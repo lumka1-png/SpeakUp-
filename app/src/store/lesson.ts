@@ -17,7 +17,7 @@ export type Section = 'vocab' | 'speak' | 'listen';
 export const SECTION_START: Record<Section, Step> = { vocab: 'g1', speak: 'speak', listen: 'listen' };
 export type Step = 'pick' | 'g1' | 'g2' | 'g3' | 'inter' | 'speak' | 'listen' | 'quiz' | 'done';
 export interface Interlude { title: string; sub: string; score: number; progress: number; next: Step; button: string; tip?: string }
-export interface Result { overall: number; vocab?: number; stars: number; xp: number; affirmation: [string, string] }
+export interface Result { overall: number; vocab?: number; /** True when every part was skipped: nothing is scored or saved. */ skippedAll?: boolean; stars: number; xp: number; affirmation: [string, string] }
 export interface SpokenItem { wordId: string; feedback: Feedback | null; score: number }
 
 interface LessonState {
@@ -65,7 +65,9 @@ export const useLesson = create<LessonState>()((set, get) => ({
   start: (practiceWords) => {
     const p = useProgress.getState();
     const random = !practiceWords && p.topic === 'random';
-    const topic = practiceWords ? 'mywords' : random ? pick(TOPIC_IDS, 1)[0] : p.topic;
+    // Random: choose among topics that still have a full lesson of words at the learner's level.
+    const open = TOPIC_IDS.filter((t) => getPool(p.level, t, p.myWords).length >= LESSON_SIZE);
+    const topic = practiceWords ? 'mywords' : random ? pick(open.length ? open : TOPIC_IDS, 1)[0] : p.topic;
     const base = { active: true, topic, random, practice: !!practiceWords, selected: [], scores: {}, inter: null, spoken: [], episode: null, episodeLoading: false, result: null };
     if (practiceWords) {
       set({ ...base, pool: [], words: practiceWords, step: 'g1', perf: initPerf(practiceWords) });
@@ -142,6 +144,10 @@ export const useLesson = create<LessonState>()((set, get) => ({
     const to = s.step === 'inter' ? s.inter?.next : after[s.step];
     if (!to) return;
     stopSpeaking();
+    // Leaving Speaking early still counts the sentences already done.
+    if (s.step === 'speak' && s.spoken.length) {
+      set({ scores: { ...s.scores, speak: Math.round(s.spoken.reduce((a, x) => a + x.score, 0) / s.spoken.length) } });
+    }
     if (to === 'finish') { finishLesson(); return; }
     if (to === 'speak' || to === 'listen') prefetchEpisode();
     set({ step: to, inter: null });
@@ -170,10 +176,16 @@ function initPerf(words: Word[]): Record<string, WordPerf> {
 /** Ends the lesson with whatever parts were done, saves progress, and shows the results. */
 function finishLesson() {
   const s = useLesson.getState();
+  const vocab = vocabScore(s.scores);
+  if (vocab == null && s.scores.speak == null && s.scores.listen == null) {
+    // Nothing was done, so there is no score, XP, or streak. The chosen words stay in My Words.
+    useLesson.setState({ step: 'done', inter: null, result: { overall: 0, stars: 0, xp: 0, affirmation: ['', ''], skippedAll: true } });
+    return;
+  }
   const overall = lessonScore(s.scores);
   const xp = xpFor(overall, s.words.length);
   useProgress.getState().recordLesson({ topic: topicName(s.topic), score: overall, xp, perf: s.perf });
-  useLesson.setState({ step: 'done', inter: null, result: { overall, vocab: vocabScore(s.scores), stars: starsFor(overall), xp, affirmation: affirmation(overall) } });
+  useLesson.setState({ step: 'done', inter: null, result: { overall, vocab, stars: starsFor(overall), xp, affirmation: affirmation(overall) } });
 }
 
 let episodeStartedAt = 0;

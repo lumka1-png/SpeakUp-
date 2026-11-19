@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { Button, Card, Icon, IconButton, Logo, MasteryDots, Pill, PillText, Row, Screen, s, T } from '@/components/ui';
-import { topicName } from '@/data/words';
+import { LEVELS, topicName } from '@/data/words';
 import { speak } from '@/lib/speech';
 import { LESSON_SIZE, useLesson } from '@/store/lesson';
 import { useProgress } from '@/store/progress';
@@ -64,7 +64,7 @@ export default function MyWords() {
                   <Row gap={8}><T v="display">{w.w}</T><T v="small" style={{ fontStyle: 'italic' }}>{w.pos}</T><MasteryDots value={w.mastery} /></Row>
                   <T v="zh">{w.zh}</T>
                   <T v="small">{w.def}</T>
-                  <T v="small">{topicName(w.topic)} · {w.mastery >= 3 ? 'Mastered' : 'Learning'}</T>
+                  <T v="small">{topicName(w.topic)} · {LEVELS[w.lvl]?.name ?? ''} · {w.mastery >= 3 ? 'Mastered' : 'Learning'}</T>
                 </View>
                 <View style={{ gap: 6 }}>
                   <IconButton name="vol" label={`Hear ${w.w}`} onPress={() => speak(w.w, { rate: 0.9 })} />

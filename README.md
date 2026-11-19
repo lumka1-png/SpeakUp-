@@ -1,7 +1,7 @@
 # SpeakUp!
 
 An English practice app for learners in Taiwan. Each lesson has three parts:
-**Vocabulary** (choose 10 words, then play 3 games), **Speaking** (say a sentence with
+**Vocabulary** (choose 5 words, then play 3 games), **Speaking** (say a sentence with
 each word and get feedback), and **Listening** (a 5-minute podcast with a quiz).
 
 * `app/`: the iOS, Android, and web app (Expo SDK 58, React Native, TypeScript)
@@ -86,7 +86,7 @@ Restart `npx expo start` after changing `.env`.
 ### Server endpoints
 
 * `POST /v1/feedback`: grammar and pronunciation feedback for one sentence
-* `POST /v1/episode`: a podcast script and 5 quiz questions for 10 words
+* `POST /v1/episode`: a podcast script and 5 quiz questions for the lesson's words
 * `POST /v1/report`: stores a beta tester's word report
 * `GET /admin/reports.csv`: reports grouped by word, most reported first
   (send `Authorization: Bearer YOUR_ADMIN_TOKEN`; opens in Excel or Google Sheets)

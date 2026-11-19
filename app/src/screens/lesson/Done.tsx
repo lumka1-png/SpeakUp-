@@ -60,6 +60,32 @@ export default function Done() {
   );
   const pct = (v: number | undefined) => (v == null ? 'skipped' : `${v}%`);
 
+  const footer = (
+    <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 + insets.bottom, gap: 10, borderTopWidth: 2, borderTopColor: C.line }}>
+      <Button title="Next lesson" iconRight="right" onPress={() => start()} />
+      <Button kind="secondary" title="Back to home" onPress={() => { quit(); if (router.canGoBack()) router.back(); else router.replace('/'); }} />
+    </View>
+  );
+
+  if (result.skippedAll) {
+    return (
+      <Screen>
+        <ScrollView contentContainerStyle={[s.scroll, { alignItems: 'stretch', paddingTop: 24 }]}>
+          <View style={{ alignItems: 'center', gap: 12 }}>
+            <T v="eyebrow">Lesson ended</T>
+            <T v="h2" accessibilityRole="header" style={{ textAlign: 'center' }}>You skipped every part this time</T>
+            <T muted style={{ textAlign: 'center' }}>{"No score this time. Your words are saved in My Words, so you can practice them whenever you're ready."}</T>
+          </View>
+          <Card style={{ gap: 8 }}>
+            <T v="h3">{practice ? 'Words in this review' : 'Saved to My Words'}</T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{words.map((w) => <Chip key={w.id} on text={w.w} />)}</View>
+          </Card>
+        </ScrollView>
+        {footer}
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <ScrollView contentContainerStyle={[s.scroll, { alignItems: 'stretch', paddingTop: 24 }]}>
@@ -91,10 +117,7 @@ export default function Done() {
           </View>
         </Card>
       </ScrollView>
-      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 + insets.bottom, gap: 10, borderTopWidth: 2, borderTopColor: C.line }}>
-        <Button title="Next lesson" iconRight="right" onPress={() => start()} />
-        <Button kind="secondary" title="Back to home" onPress={() => { quit(); if (router.canGoBack()) router.back(); else router.replace('/'); }} />
-      </View>
+      {footer}
       {result.stars > 0 && !reduceMotion && <Confetti />}
     </Screen>
   );

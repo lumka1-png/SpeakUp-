@@ -28,17 +28,19 @@
 * Make every lesson feel finished: a clear score, a short bilingual affirmation, and a visible streak.
 * Keep running costs predictable: one AI provider (Claude), with on-device speech recognition and text-to-speech.
 
-**Beta success metrics:** lesson completion rate above 60%, Day 7 retention above 25%, at least 8 of 10 speaking sentences attempted per lesson, and fewer than 2% of words reported as wrong by the end of the beta.
+**Beta success metrics:** lesson completion rate above 60%, Day 7 retention above 25%, at least 4 of 5 speaking sentences attempted per lesson, and fewer than 2% of words reported as wrong by the end of the beta.
 
 ## 3. The lesson loop
 
 1. **Set up:** choose a level and a topic from dropdowns (or Random).
-2. **Vocabulary:** choose 10 words. They move from the list into **My Words**. Then play 3 games:
+2. **Vocabulary:** choose 5 words at the learner's level. They move from the list into **My Words**. Then play 3 games:
    * Game 1: Traditional Chinese meaning (multiple choice)
-   * Game 2: Match the meaning (tap to pair, 2 rounds of 5)
+   * Game 2: Match the meaning (tap to pair, 1 round of 5)
    * Game 3: Quick Think (45-second true or false sprint with combos)
-3. **Speaking:** record one short sentence per word. Get grammar and pronunciation feedback.
-4. **Listening:** a roughly 5-minute two-host podcast that uses all 10 words, then a 5-question quiz.
+3. **Speaking:** record one short sentence per word. Get feedback on meaning, grammar, and pronunciation.
+4. **Listening:** a roughly 5-minute two-host talk show on the lesson topic with the words hidden in natural conversation, then a 5-question quiz.
+
+Every exercise has a **Skip** link, and the **Vocabulary**, **Speaking**, and **Listening** labels at the top jump to that section once words are chosen. Skipped parts are left out of the score and do not change a word's mastery. If every part is skipped, the lesson gives no score, XP, or streak.
 5. **Results:** overall score, stars, XP, streak, a bilingual affirmation, then **Next lesson**.
 
 At any point, a learner can tap **Report** on a word to flag a problem (see section 6).
@@ -97,11 +99,11 @@ Storing translations by locale from day one makes the later Hong Kong and mainla
 
 ## 7. Word selection rules
 
-* A learner must choose exactly 10 words (fewer only when a list has fewer than 10 left; the minimum is 4).
+* A learner must choose exactly 5 words (fewer only when a list has fewer than 5 left at their level; the minimum is 4).
 * Chosen words disappear from every list (they are matched by the word itself, across topics) and appear in **My Words**.
 * **Auto-pick** fills the remaining slots. **Show Chinese** reveals translations to help learners find new words.
-* Words closest to the learner's level appear first. Nearby levels follow, tagged with a level badge.
-* In My Words, learners can **return a word to its list**, filter by Learning and Mastered, search, hear the word, report it, and start a **Practice my words** lesson. That lesson uses the 10 words with the lowest mastery and skips selection.
+* Only words at the learner's level are offered. Levels follow CEFR (Beginner A1 to A2, Intermediate B1, Advanced B2, Expert C1+), using the Oxford 3000 and 5000 lists as the main guide. Every list has at least 10 words per level. When a level runs out, the learner is asked to choose another topic or level.
+* In My Words, learners can **return a word to its list**, filter by Learning and Mastered, search, hear the word, report it, and start a **Practice my words** lesson. That lesson uses the 5 words with the lowest mastery and skips selection.
 * **Random topic** picks from the available lists at the start of the lesson.
 
 ## 8. Vocabulary games
@@ -145,7 +147,7 @@ Claude reads text and images, not audio. So the device turns speech into text, a
 
 ### 10.1 Podcast
 
-* **Claude writes the script** in one call per lesson: two hosts (Mia and Leo), 650 to 750 words, roughly 5 minutes at learner speed. Every chosen word appears at least twice. The script stays at the learner's CEFR level and on the lesson's topic. Settings and names can feel familiar to Taiwanese learners (Taipei, night markets, the MRT) without becoming stereotyped. It returns JSON: `{ title, lines: [{ speaker, text }], quiz: [...] }`.
+* **Claude writes the script** in one call per lesson: two hosts (Mia and Leo), 650 to 750 words, roughly 5 minutes at learner speed. Every chosen word appears at least twice, hidden in natural conversation: the hosts never define, point out, or recap the words. The script stays at the learner's CEFR level and on the lesson's topic. Settings and names can feel familiar to Taiwanese learners (Taipei, night markets, the MRT) without becoming stereotyped. It returns JSON: `{ title, lines: [{ speaker, text }], quiz: [...] }`.
 * **Audio:** with "Claude only," audio uses on-device text-to-speech (Expo Speech on mobile, the Web Speech API on web), with two different voices. This is free and works offline, but voice quality varies by device. A cloud neural voice service would greatly improve the "podcast" feel. That would be a second vendor, so it is listed in the roadmap.
 * **Player:** play and pause, previous and next line, speeds of 0.8x, 1x, and 1.2x, transcript off by default, and "Words to catch" chips that light up when each word is heard.
 * Generate the script while the learner is in the speaking step, so there is no wait.
@@ -190,7 +192,7 @@ A **BETA** label sits next to the logo during the beta.
 * **Content updates:** the app checks for a new content version at launch and downloads corrected word data, so report fixes reach testers within a day.
 * **Backend:** a small serverless proxy (for example Cloudflare Workers or Vercel Functions) in TypeScript using the official Anthropic SDK (`@anthropic-ai/sdk`). It holds the API key, which never ships in the app.
   * `POST /v1/feedback` takes a word, transcript, confidence, and level, and returns feedback JSON.
-  * `POST /v1/episode` takes 10 words, a topic, and a level, and returns the script and quiz JSON.
+  * `POST /v1/episode` takes the lesson's words (4 to 10), a topic, and a level, and returns the script and quiz JSON.
   * `POST /v1/report` stores a word report.
   * `GET /v1/content` returns the latest content version.
   * Each install gets an anonymous ID. Add per-device rate limits (for example 10 lessons a day in the beta) and App Attest or Play Integrity checks to stop abuse.

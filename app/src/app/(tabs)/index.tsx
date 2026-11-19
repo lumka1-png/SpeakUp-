@@ -26,6 +26,7 @@ export default function Home() {
   const { level, topic, myWords, history, setLevel, setTopic } = useProgress();
   const start = useLesson((l) => l.start);
   const pool = topic === 'random' ? null : getPool(level, topic, myWords);
+  const saved = Object.keys(myWords).length;
 
   const levelOptions: SelectOption[] = LEVELS.map((l, i) => ({ value: String(i), label: `${l.name} (CEFR ${l.cefr})` }));
   const topicOptions: SelectOption[] = [
@@ -55,6 +56,16 @@ export default function Home() {
             </View>
           </Row>
           <Button title="Start lesson" iconRight="right" onPress={() => { start(); router.push('/lesson'); }} />
+        </Card>
+        <Card style={{ gap: 10 }}>
+          <Row gap={12}>
+            <Icon name="bookmark" color={C.teal} />
+            <View style={{ flex: 1 }}>
+              <T v="h3">My Words</T>
+              <T v="small">{saved ? `${saved} word${saved > 1 ? 's' : ''} you have chosen so far, with meanings and progress.` : 'Every word you choose in a lesson is saved here.'}</T>
+            </View>
+          </Row>
+          <Button kind="secondary" title={saved ? 'See my words' : 'Open My Words'} onPress={() => router.navigate('/words')} />
         </Card>
         <View style={{ gap: 10 }}>
           <T v="h2" accessibilityRole="header">How a lesson works</T>

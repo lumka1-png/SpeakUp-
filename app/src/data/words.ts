@@ -34,7 +34,7 @@ export function wordsOf(topic: string): Word[] {
   if (topic === 'toeic') return TOEIC_LISTS.flatMap((list, l) => list.map((s) => parseWord(s, l, 'toeic')));
   const t = THEME_LISTS[topic];
   if (!t) return [];
-  return t.words.map((s, i) => parseWord(s, Math.floor(i / 5), topic));
+  return t.levels.flatMap((list, l) => list.map((s) => parseWord(s, l, topic)));
 }
 
 export const ALL_WORDS: Word[] = TOPIC_IDS.flatMap(wordsOf);
@@ -57,9 +57,7 @@ export function topicColor(id: string): string {
   return THEME_LISTS[id]?.color ?? '#D24A22';
 }
 
-/** Words the learner has not saved yet, closest to their level first. */
+/** Words at the learner's level that they have not saved yet. Lessons never mix in other levels. */
 export function getPool(level: number, topic: string, saved: Record<string, unknown>): Word[] {
-  return wordsOf(topic)
-    .filter((w) => !saved[w.id])
-    .sort((a, b) => Math.abs(a.lvl - level) - Math.abs(b.lvl - level) || a.lvl - b.lvl);
+  return wordsOf(topic).filter((w) => w.lvl === level && !saved[w.id]);
 }
