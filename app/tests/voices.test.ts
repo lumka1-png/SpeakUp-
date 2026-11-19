@@ -66,6 +66,13 @@ test('Android: maps voice codes to hosts and prefers voices that work offline', 
   assert.equal(r.Leo, 'en-us-x-tpd-local');
 });
 
+test('Android voices named only by language: hosts get different voices and pitch', () => {
+  const r = pickHostVoices([v('English United States', 'en_US'), v('English United Kingdom', 'en_GB')]);
+  assert.equal(r.Mia, 'English United States');
+  assert.equal(r.Leo, 'English United Kingdom');
+  assert.equal(r.same, true);
+});
+
 test('one usable voice, or none: both hosts share it (the app then changes pitch)', () => {
   assert.deepEqual(pickHostVoices([v('Samantha')]), { Mia: 'Samantha', Leo: 'Samantha', same: true });
   assert.deepEqual(pickHostVoices([v('Fred'), v('Mei-Jia', 'zh-TW')]), { same: true });

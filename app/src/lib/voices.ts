@@ -11,6 +11,7 @@
  */
 
 export interface VoiceInfo { identifier: string; name: string; language: string; quality?: string }
+/** `same`: the hosts would sound alike (one voice, or genders unknown), so the app changes their pitch. */
 export interface HostVoices { Mia?: string; Leo?: string; same: boolean }
 type Gender = 'f' | 'm' | '?';
 
@@ -60,5 +61,8 @@ export function pickHostVoices(voices: VoiceInfo[]): HostVoices {
   if (!ranked.length) return { same: true };
   const mia = ranked.find((x) => x.g === 'f') ?? ranked.find((x) => x.g === '?') ?? ranked[0];
   const leo = ranked.find((x) => x.g === 'm' && x !== mia) ?? ranked.find((x) => x.g === '?' && x !== mia) ?? ranked.find((x) => x !== mia);
-  return { Mia: mia.v.identifier, Leo: (leo ?? mia).v.identifier, same: !leo };
+  // Android often names voices only by language ("English United States"), so a female and a male
+  // voice cannot be confirmed. Treat that like a single voice and separate the hosts by pitch.
+  const confirmed = !!leo && mia.g === 'f' && leo.g === 'm';
+  return { Mia: mia.v.identifier, Leo: (leo ?? mia).v.identifier, same: !confirmed };
 }
