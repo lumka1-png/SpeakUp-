@@ -44,6 +44,16 @@ npx eas-cli@latest build --profile development --platform ios
 Use `--platform android` for Android. The web version records voice in Chrome, Edge,
 and Safari.
 
+### Podcast voices
+
+The podcast is read aloud by the voices built into each device, and the app picks the
+most natural ones available (Microsoft "Natural" voices in Edge, Apple "Premium" and
+"Enhanced" voices, Google voices in Chrome and on Android). For the best sound:
+
+* **Windows, Mac, or Android web:** use **Microsoft Edge**, which has natural-sounding online voices.
+* **iPhone, iPad, or Mac:** download a better voice in **Settings > Accessibility > Spoken Content >
+  Voices > English**, for example "Ava (Premium)" and "Evan (Enhanced)".
+
 ## Run the server
 
 ```bash

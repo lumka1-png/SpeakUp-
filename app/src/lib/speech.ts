@@ -9,22 +9,22 @@ import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
 
 import type { Host } from './podcast';
+import { type HostVoices, pickHostVoices } from './voices';
 
-type VoiceMap = { Mia?: string; Leo?: string; same: boolean };
-let voiceMap: VoiceMap | null = null;
+let voiceMap: HostVoices | null = null;
+let listening = false;
 
+/** Chooses the most natural voices on this device for Mia and Leo (see voices.ts). */
 export async function loadVoices(): Promise<void> {
   try {
-    const all = await Speech.getAvailableVoicesAsync();
-    const en = all.filter((v) => /^en[-_]/i.test(v.language));
-    const us = en.filter((v) => /en[-_]US/i.test(v.language));
-    const pool = us.length ? us : en;
-    const enhanced = (v: Speech.Voice) => (v.quality === Speech.VoiceQuality.Enhanced ? 0 : 1);
-    const female = [...pool].sort((a, b) => enhanced(a) - enhanced(b)).find((v) => /samantha|ava|allison|aria|jenny|zira|female|karen|moira|google us english/i.test(v.name)) ?? pool[0];
-    const male = en.find((v) => v !== female && /daniel|alex|guy|david|fred|\bmale|arthur|aaron|tom|rishi/i.test(v.name)) ?? en.find((v) => v !== female) ?? female;
-    voiceMap = { Mia: female?.identifier, Leo: male?.identifier, same: !female || female === male };
+    voiceMap = pickHostVoices(await Speech.getAvailableVoicesAsync());
   } catch {
     voiceMap = { same: true };
+  }
+  // Browsers can add voices after the first list (Edge adds its "Natural" voices a moment later), so pick again.
+  if (Platform.OS === 'web' && !listening && typeof window !== 'undefined' && window.speechSynthesis?.addEventListener) {
+    listening = true;
+    window.speechSynthesis.addEventListener('voiceschanged', () => { loadVoices(); });
   }
 }
 
