@@ -109,8 +109,8 @@ progress message and offers a quick offline episode after 20 seconds.
 ### Deploy the server
 
 Any Node.js host works (for example Render, Railway, Fly.io, or a small VPS). Set the
-environment variables from `.env.example` in the host's dashboard, use `npm run build` as
-the build command and `npm start` (which runs `dist/server.js`) as the start command. Reports are saved to a file, so give the host a
+environment variables from `.env.example` in the host's dashboard, and use `npm start`
+(entry file `app.js`) as the start command. `npm install` builds the server automatically. Reports are saved to a file, so give the host a
 persistent disk, or move reports to a database before a large beta.
 
 ## Checks
