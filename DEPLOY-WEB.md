@@ -38,10 +38,13 @@ Menu names below are from Hostinger's hPanel and may change a little over time.
 2. Choose **GitHub**, install the Hostinger GitHub App when asked, and give it access to the
    `SpeakUp-` repository. Choose the `main` branch.
 3. Build settings:
+   * **Framework preset:** Express
    * **Root directory:** `server`
-   * **Node version:** 20 or 22
-   * **Build script:** `build`
-   * **Entry file:** `dist/server.js` (if it asks; the start command is `node dist/server.js`)
+   * **Node version:** 22.x (20.x also works)
+   * **Package manager:** npm
+   * **Entry file:** `app.js`
+
+   There is no build setting to choose: the server builds itself when Hostinger installs it.
 4. **Environment variables:** add these.
 
    | Name | Value |
