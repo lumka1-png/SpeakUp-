@@ -1,3 +1,4 @@
+import './env'; // first, so every module sees the settings
 import { serve } from '@hono/node-server';
 
 import { createApp } from './app';

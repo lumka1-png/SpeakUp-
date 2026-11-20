@@ -1,81 +1,109 @@
-# Put SpeakUp! online as a web app
+# Put SpeakUp! online with Hostinger
 
 SpeakUp! runs in the browser on phones and computers, with no app store and no developer
 accounts. Learners open a link, and on a phone they can add it to the home screen, where it
 opens full screen like an app.
 
-There are two parts:
+Everything runs on your Hostinger Business Web Hosting plan, in two parts:
 
-1. **The server** (Claude feedback, new podcasts, natural voices) runs on Render.
-2. **The app** (a folder of website files) goes on your own website, at a subdomain such as
-   `app.yourwebsite.com`.
+| Part | What it is | Address |
+|---|---|---|
+| 1. The server | Claude feedback, new podcasts, natural voices | `api.takeacourse.online` |
+| 2. The app | The website files learners open | `app.takeacourse.online` |
 
-Do part 1 first, because the app needs the server's address.
+Do part 1 first, because the app needs the server's address. The addresses above are
+suggestions; any subdomains work.
 
-**Running costs:** about US$7 to $8 a month for Render (Starter plan plus a 1 GB disk), plus
-your Claude and OpenAI usage. Check Render's pricing page for current prices.
+**Running costs:** nothing extra for hosting (it is part of your plan), plus your Claude and
+OpenAI usage.
 
----
-
-## Part 1: The server on Render
-
-1. **Merge the latest work into `main`** on GitHub, so Render uses it.
-2. Create a free account at [render.com](https://render.com) and connect your GitHub account.
-3. In Render, choose **New > Blueprint**, then pick the `SpeakUp-` repository. Render reads the
-   `render.yaml` file and sets everything up.
-4. Render asks for three values:
-   * `SPEAKUP_CLAUDE_KEY`: your Claude API key.
-   * `SPEAKUP_OPENAI_KEY`: your OpenAI API key (for natural podcast voices).
-   * `ALLOWED_ORIGINS`: your app's address, for example `https://app.yourwebsite.com`
-     (exactly, with `https://` and no slash at the end).
-5. Choose **Apply**. The first deploy takes a few minutes.
-6. Copy the server's address from the top of the service page, for example
-   `https://speakup-api.onrender.com`. Open it with `/health` at the end; it should show
-   `{"ok":true}`.
-
-Render redeploys the server by itself whenever `main` changes.
-
-**Word reports from testers:** open `https://YOUR-SERVER/admin/reports.csv` with the
-`ADMIN_TOKEN` that Render created (in the service's **Environment** tab). Ask Claude for a
-one-line command to download it, or use a browser extension that adds an
-`Authorization: Bearer YOUR_ADMIN_TOKEN` header.
+Menu names below are from Hostinger's hPanel and may change a little over time.
 
 ---
 
-## Part 2: The app on your website
+## Part 1: The server (Node.js web app)
 
-### Build the app files
+### Before you start
 
-Either ask Claude to build them with your server's address (you get a ZIP file), or build them
-yourself with Node.js 20 or later:
+1. **Merge the latest work into `main`** on GitHub, so Hostinger uses it.
+2. **Choose a folder for saved data** outside the app, so podcast audio and testers' word
+   reports survive updates. In hPanel's **File Manager**, your home folder is shown at the top,
+   for example `/home/u123456789`. Your data folder will be
+   `/home/u123456789/speakup-data` (use your own number). You don't need to create it; the
+   server does.
 
-1. In the `app` folder, create a file named `.env.production` containing one line:
-   ```
-   EXPO_PUBLIC_API_URL=https://speakup-api.onrender.com
-   ```
-2. Run:
-   ```bash
-   npm install
-   ```
-   ```bash
-   npm run build:web
-   ```
-3. The files are now in `app/dist`. Zip the **contents** of that folder (not the folder
-   itself). It includes a hidden file named `.htaccess`, which must be included.
+### Create the app
 
-### Upload to your hosting (cPanel)
+1. In hPanel, go to **Websites** > **Add Website** > **Node.js web app**.
+2. Choose **GitHub**, install the Hostinger GitHub App when asked, and give it access to the
+   `SpeakUp-` repository. Choose the `main` branch.
+3. Build settings:
+   * **Root directory:** `server`
+   * **Node version:** 20 or 22
+   * **Build script:** `build`
+   * **Entry file:** `dist/server.js` (if it asks; the start command is `node dist/server.js`)
+4. **Environment variables:** add these.
 
-The names below are from cPanel; other hosting panels have the same steps under similar names.
+   | Name | Value |
+   |---|---|
+   | `SPEAKUP_CLAUDE_KEY` | Your Claude API key |
+   | `SPEAKUP_OPENAI_KEY` | Your OpenAI API key (natural podcast voices) |
+   | `ALLOWED_ORIGINS` | `https://app.takeacourse.online` (exactly, no slash at the end) |
+   | `ADMIN_TOKEN` | A long random password you make up, for downloading word reports |
+   | `CLAUDE_MODEL` | `claude-haiku-5-5` |
+   | `AUDIO_DIR` | `/home/u123456789/speakup-data/audio` (your number) |
+   | `REPORTS_FILE` | `/home/u123456789/speakup-data/reports.jsonl` (your number) |
 
-1. **Create the subdomain:** **Domains** > **Create A New Domain**, enter
-   `app.yourwebsite.com`, and give it its own folder (for example `public_html/app`), not the
-   main site's folder.
-2. **Turn on HTTPS:** **SSL/TLS Status** > **Run AutoSSL** (it can take a few minutes). The
-   microphone only works on `https://` sites.
-3. **Upload:** **File Manager** > open the subdomain's folder > **Upload** the ZIP > select it >
-   **Extract**. Then turn on **Settings** > **Show Hidden Files** and check that `index.html`
-   and `.htaccess` are directly in that folder, not inside another folder.
-4. Open `https://app.yourwebsite.com`. You should see the SpeakUp! welcome screen.
+5. **Domain:** start with the temporary domain Hostinger offers, or connect
+   `api.takeacourse.online` right away.
+6. Deploy. When it finishes, open the address with `/health` at the end, for example
+   `https://api.takeacourse.online/health`. It should show `{"ok":true}`.
+
+If the deploy fails or the data folder cannot be written, ask Hostinger's AI: "My Node.js web
+app needs to save files in /home/u123456789/speakup-data. Is that allowed, or which folder should
+I use so files are kept between deploys?" Then put that folder in `AUDIO_DIR` and
+`REPORTS_FILE`.
+
+**Updates:** after changes are merged into `main`, redeploy from the app's page in hPanel (or
+turn on automatic deploys if Hostinger offers it).
+
+**Word reports from testers:** `https://api.takeacourse.online/admin/reports.csv`, sent with the
+header `Authorization: Bearer YOUR_ADMIN_TOKEN`. Ask Claude for a one-line command to download
+it.
+
+---
+
+## Part 2: The app (website files)
+
+### Get the files
+
+Send Claude the server address from part 1, and you get a ZIP file built for it.
+
+To build it yourself instead (Node.js 20 or later): in the `app` folder, create a file named
+`.env.production` with the line `EXPO_PUBLIC_API_URL=https://api.takeacourse.online`, then run:
+
+```bash
+npm install
+```
+
+```bash
+npm run build:web
+```
+
+Zip the **contents** of `app/dist` (not the folder itself), including the hidden `.htaccess`
+file.
+
+### Upload
+
+1. **Create the subdomain:** hPanel > **Domains** > **Subdomains** > create
+   `app.takeacourse.online`. Note the folder Hostinger gives it (for example
+   `public_html/app`).
+2. **HTTPS:** hPanel > **Security** > **SSL**, and make sure the subdomain has a certificate
+   (Hostinger usually adds a free one automatically). The microphone only works on `https://`.
+3. **Upload:** **File Manager** > open the subdomain's folder > upload the ZIP > right-click >
+   **Extract**. Check that `index.html` and `.htaccess` sit directly in that folder, not inside
+   another folder.
+4. Open `https://app.takeacourse.online`. You should see the SpeakUp! welcome screen.
 
 ### Check that it works
 
@@ -84,20 +112,18 @@ The names below are from cPanel; other hosting panels have the same steps under 
 * On the Listening step, the footer should say "Natural voices by OpenAI."
 
 If it says "Offline feedback" or "Read by your device", the app cannot reach the server: check
-the address in `.env.production` and `ALLOWED_ORIGINS` on Render.
+that the server's `/health` page works and that `ALLOWED_ORIGINS` is exactly
+`https://app.takeacourse.online`.
 
 ### Add it to a phone's home screen
 
 * **Android (Chrome):** menu (⋮) > **Add to Home screen** or **Install app**.
 * **iPhone (Safari):** Share button > **Add to Home Screen**.
 
+**Updates:** upload the new files over the old ones. Learners get the new version the next time
+they open the app.
+
 ---
-
-## Updating
-
-* **Server:** merge changes into `main`; Render redeploys.
-* **App:** build again and upload the new files over the old ones. Learners get the new version
-  the next time they open the app.
 
 ## Good to know
 
