@@ -7,6 +7,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+import { cleanKey } from './keys';
+
 export type Host = 'Mia' | 'Leo';
 
 export const TTS_MODEL = process.env.SPEAKUP_TTS_MODEL || 'gpt-4o-mini-tts';
@@ -20,7 +22,7 @@ const INSTRUCTIONS: Record<Host, string> = {
   Leo: 'You are Leo, a friendly, easygoing podcast host chatting with your friend Mia. Sound natural and relaxed, like a real conversation, with clear pronunciation and a calm, unhurried pace.',
 };
 
-export const ttsKey = () => process.env.SPEAKUP_OPENAI_KEY || process.env.OPENAI_API_KEY || '';
+export const ttsKey = () => cleanKey(process.env.SPEAKUP_OPENAI_KEY || process.env.OPENAI_API_KEY);
 
 /** Thrown when audio cannot be made. The app then uses the phone's own voices. */
 export class TtsUnavailable extends Error {}

@@ -14,6 +14,8 @@ export interface Deps {
   tts?: Tts;
   limiter?: DailyLimiter;
   adminToken?: string;
+  /** Setup check shown at /admin/status. */
+  status?: () => Promise<unknown>;
   /** Allowed web origins for CORS. Native apps do not send an Origin header. */
   origins?: string[];
 }
@@ -94,9 +96,19 @@ export function createApp(deps: Deps) {
     return c.json({ ok: true });
   });
 
+  /** Admin pages accept the token as a header, or as ?token= so they can be opened in a browser. */
+  const isAdmin = (c: { req: { header: (n: string) => string | undefined; query: (n: string) => string | undefined } }) =>
+    !!deps.adminToken && (c.req.header('Authorization') === `Bearer ${deps.adminToken}` || c.req.query('token') === deps.adminToken);
+
+  /** Setup check: are the API keys accepted, and can the server save files? */
+  app.get('/admin/status', async (c) => {
+    if (!isAdmin(c)) return c.json({ error: 'unauthorized' }, 401);
+    return c.json(deps.status ? await deps.status() : { error: 'status not available' });
+  });
+
   /** Triage view for the team: reports grouped by word, as CSV (opens in Excel or Google Sheets). */
   app.get('/admin/reports.csv', async (c) => {
-    if (!deps.adminToken || c.req.header('Authorization') !== `Bearer ${deps.adminToken}`) return c.json({ error: 'unauthorized' }, 401);
+    if (!isAdmin(c)) return c.json({ error: 'unauthorized' }, 401);
     const all = await deps.reports.all();
     const byWord = new Map<string, typeof all>();
     for (const r of all) byWord.set(r.wordId, [...(byWord.get(r.wordId) ?? []), r]);

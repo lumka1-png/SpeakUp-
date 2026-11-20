@@ -3,6 +3,7 @@ import { serve } from '@hono/node-server';
 
 import { createApp } from './app';
 import { apiKey, createClaudeAi, MODEL } from './claude';
+import { setupStatus } from './status';
 import { fileReportStore } from './store';
 import { createOpenAiTts, ttsKey } from './tts';
 
@@ -15,7 +16,8 @@ const app = createApp({
   ai: createClaudeAi(),
   reports: fileReportStore(process.env.REPORTS_FILE || './data/reports.jsonl'),
   tts: ttsKey() ? createOpenAiTts(process.env.AUDIO_DIR || './data/audio') : undefined,
-  adminToken: process.env.ADMIN_TOKEN,
+  adminToken: process.env.ADMIN_TOKEN?.trim(),
+  status: () => setupStatus(),
   origins: (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
 });
 

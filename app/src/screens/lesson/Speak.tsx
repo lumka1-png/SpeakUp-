@@ -154,7 +154,9 @@ export default function Speak() {
           ) : fb.meaningOk ? (
             <T v="smallBold" style={{ color: C.okDark }}>{`✓ You used “${w.w}” with the right meaning.`}</T>
           ) : (
-            <T v="small">{`Offline check: grammar only. Make sure your sentence shows that “${w.w}” means “${w.def}”. Meaning is checked when you're online.`}</T>
+            <T v="small">{fb.serverFailed
+              ? `Claude couldn't check this sentence right now, so this is a grammar-only check and the meaning was not checked. Make sure your sentence shows that “${w.w}” means “${w.def}”.`
+              : `Offline check: grammar only. Make sure your sentence shows that “${w.w}” means “${w.def}”. Meaning is checked when you're online.`}</T>
           )}
           {fb.encouragement && fb.meaningOk !== false ? <T v="bodyBold">{fb.encouragement}</T> : null}
           {fb.issues.length ? fb.issues.map((x, k) => (
@@ -209,7 +211,7 @@ export default function Speak() {
               ))}
             </Card>
           )}
-          <T v="small" style={{ textAlign: 'center' }}>{fb.source === 'claude' ? 'Feedback by Claude.' : 'Offline feedback (rule-based).'}</T>
+          <T v="small" style={{ textAlign: 'center' }}>{fb.source === 'claude' ? 'Feedback by Claude.' : fb.serverFailed ? 'Rule-based feedback (Claude was not available).' : 'Offline feedback (rule-based).'}</T>
         </View>
       )}
       <T v="smallBold">Word {i + 1} of {words.length}</T>

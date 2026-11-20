@@ -6,6 +6,8 @@ import { AiUnavailable, cleanEpisode, type Ai } from '../src/claude';
 import type { EpisodeOutput } from '../src/schemas';
 import { DailyLimiter, memoryReportStore } from '../src/store';
 import { createOpenAiTts } from '../src/tts';
+import { cleanKey, maskKey } from '../src/keys';
+import { setupStatus } from '../src/status';
 import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -99,4 +101,41 @@ test('speech: makes each clip once, caches it, and serves the MP3', async () => 
 test('speech: without voices configured, the app is told to use device voices', async () => {
   const app = createApp({ ai: fakeAi(), reports: memoryReportStore() });
   assert.equal((await post(app, '/v1/speech', { speaker: 'Mia', text: 'Hello.' })).status, 503);
+});
+
+test('keys pasted with spaces, line breaks, or quotes are cleaned', () => {
+  assert.equal(cleanKey('  sk-ant-abc123\n'), 'sk-ant-abc123');
+  assert.equal(cleanKey('"sk-ant-abc123"'), 'sk-ant-abc123');
+  assert.equal(cleanKey(" 'sk-abc' "), 'sk-abc');
+  assert.equal(cleanKey(undefined), '');
+  assert.equal(maskKey('sk-ant-api03-ABCDEFGHIJKLMNOP-wxyz'), 'sk-ant-…wxyz (34 characters)');
+  assert.equal(maskKey(''), '(not set)');
+});
+
+test('admin status needs the token and explains a rejected key', async () => {
+  const app = createApp({ ai: fakeAi(), reports: memoryReportStore(), adminToken: 'secret', status: async () => ({ ok: true }) });
+  assert.equal((await app.request('/admin/status')).status, 401);
+  assert.equal((await app.request('/admin/status?token=wrong')).status, 401);
+  assert.deepEqual(await (await app.request('/admin/status?token=secret')).json(), { ok: true });
+  assert.equal((await app.request('/admin/reports.csv?token=secret')).status, 200);
+
+  process.env.SPEAKUP_CLAUDE_KEY = '  "sk-ant-test-key-1234"  ';
+  process.env.SPEAKUP_OPENAI_KEY = 'sk-openai-test-5678';
+  process.env.AUDIO_DIR = await mkdtemp(join(tmpdir(), 'speakup-status-'));
+  const seen: Record<string, string> = {};
+  const fakeFetch = (async (url: string, init: { headers: Record<string, string> }) => {
+    if (url.includes('anthropic')) { seen.claude = init.headers['x-api-key']; return new Response('{"type":"error"}', { status: 401 }); }
+    seen.openai = init.headers.Authorization;
+    // A restricted OpenAI key: allowed to make audio, but not to look up models.
+    return new Response('{"error":"Missing scopes: api.model.read"}', { status: 403 });
+  }) as unknown as typeof fetch;
+  const st = await setupStatus(fakeFetch);
+  assert.equal(seen.claude, 'sk-ant-test-key-1234', 'the cleaned key is sent');
+  assert.equal(st.claude.ok, false);
+  assert.match(st.claude.detail, /401: the key was rejected/);
+  assert.equal(st.openai.ok, true);
+  assert.equal(st.audioFolder.ok, true);
+  assert.equal(st.ok, false);
+  assert.ok(!JSON.stringify(st).includes('test-key-1234'), 'keys are never shown in full');
+  delete process.env.SPEAKUP_CLAUDE_KEY; delete process.env.SPEAKUP_OPENAI_KEY; delete process.env.AUDIO_DIR;
 });

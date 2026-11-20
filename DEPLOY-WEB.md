@@ -70,9 +70,9 @@ I use so files are kept between deploys?" Then put that folder in `AUDIO_DIR` an
 **Updates:** after changes are merged into `main`, redeploy from the app's page in hPanel (or
 turn on automatic deploys if Hostinger offers it).
 
-**Word reports from testers:** `https://api.takeacourse.online/admin/reports.csv`, sent with the
-header `Authorization: Bearer YOUR_ADMIN_TOKEN`. Ask Claude for a one-line command to download
-it.
+**Word reports from testers:** open
+`https://api.takeacourse.online/admin/reports.csv?token=YOUR_ADMIN_TOKEN` to download them.
+Keep links with your token private.
 
 ---
 
@@ -117,6 +117,17 @@ file.
 If it says "Offline feedback" or "Read by your device", the app cannot reach the server: check
 that the server's `/health` page works and that `ALLOWED_ORIGINS` is exactly
 `https://app.takeacourse.online`.
+
+If it says "Claude couldn't check this sentence" or "Claude was not available", the server is
+reachable but a key is not working. Open the **setup check**:
+
+`https://api.takeacourse.online/admin/status?token=YOUR_ADMIN_TOKEN`
+
+It tests your Claude and OpenAI keys (free checks) and the data folder, and says what is wrong,
+for example "the key was rejected". Keys are shown only partly, such as `sk-ant-…wgAA (106
+characters)`, so you can compare them with your provider's dashboard. Fix the value in Hostinger's
+environment variables and redeploy. Spaces, line breaks, or quote marks around a pasted key are
+removed automatically.
 
 ### Add it to a phone's home screen
 
