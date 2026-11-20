@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
-import { Button, Card, Chip, IconButton, Icon, Row, T } from '../../components/ui';
+import { SoundCheck } from '../../components/SoundCheck';
+import { Button, Card, Chip, IconButton, Icon, LinkButton, Meter, Row, T } from '../../components/ui';
 import { PODCAST_NAME } from '../../config';
 import { episodeSeconds, wordsInLine } from '../../lib/podcast';
 import { speak, stopSpeaking } from '../../lib/speech';
 import { fmtTime, wordRe } from '../../lib/util';
-import { prefetchEpisode, useLesson } from '../../store/lesson';
+import { episodeWaitStart, playQuickEpisode, prefetchEpisode, useLesson } from '../../store/lesson';
 import { useProgress } from '../../store/progress';
+import { cloudVoices, playLine, prefetchLines } from '../../lib/podcastAudio';
+import type { Word } from '../../data/words';
 import { C, F } from '../../theme';
 import { Shell } from './Shell';
 
@@ -23,18 +26,75 @@ function Highlighted({ text, words }: { text: string; words: string[] }) {
   );
 }
 
+/** Episodes usually take 25 to 45 seconds to write. Messages follow the typical wait. */
+const WAIT_STEPS: [number, string][] = [
+  [0, 'Choosing a story for your topic…'],
+  [8, 'Writing what Mia and Leo say…'],
+  [20, 'Putting all of your words into the story…'],
+  [32, 'Writing your quiz questions…'],
+  [45, 'Almost ready. Long episodes take a little longer…'],
+];
+const QUICK_AFTER = 20;
+
+/** Estimated progress that slows down near the end and never reaches 100% before the episode arrives. */
+const waitProgress = (sec: number) => 95 * (1 - Math.exp(-sec / 22));
+
+function EpisodeLoading({ words }: { words: Word[] }) {
+  const [sec, setSec] = useState(() => Math.floor((Date.now() - episodeWaitStart()) / 1000));
+  useEffect(() => {
+    const t = setInterval(() => setSec(Math.floor((Date.now() - episodeWaitStart()) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const message = [...WAIT_STEPS].reverse().find(([at]) => sec >= at)![1];
+
+  return (
+    <Shell progress={0.72} footer={sec >= QUICK_AFTER
+      ? <Button kind="secondary" title="Play a quick episode now" icon="play" onPress={playQuickEpisode}
+          label="Play a quick episode now instead of waiting. It uses a simpler, ready-made story." />
+      : undefined}>
+      <View style={{ alignItems: 'center', gap: 10, paddingTop: 28 }}>
+        <ActivityIndicator size="large" color={C.coral} />
+        <T v="h3" style={{ textAlign: 'center' }}>Writing your podcast</T>
+        <T muted style={{ textAlign: 'center' }}>Mia and Leo are preparing a new episode with all of your words. This takes about 30 seconds.</T>
+      </View>
+      <View style={{ gap: 8, marginTop: 18 }} accessible accessibilityRole="progressbar"
+        accessibilityLabel="Podcast loading" accessibilityValue={{ min: 0, max: 100, now: Math.round(waitProgress(sec)) }}>
+        <Meter value={waitProgress(sec)} />
+        <T v="smallBold" style={{ textAlign: 'center' }} accessibilityLiveRegion="polite">{message}</T>
+      </View>
+      <Card style={{ marginTop: 18, gap: 10 }}>
+        <T v="h3">While you wait: your words</T>
+        <T v="small" muted>Listen for these words in the episode.</T>
+        {words.map((w) => (
+          <View key={w.id} style={{ gap: 2 }}>
+            <Text style={{ fontFamily: F.bodyHeavy, fontSize: 16, color: C.ink }}>{w.w} <Text style={{ fontFamily: F.body, color: C.muted }}>{w.pos} {w.zh}</Text></Text>
+            <T v="small" muted>{w.def}</T>
+          </View>
+        ))}
+      </Card>
+      {sec >= QUICK_AFTER && <T v="small" muted style={{ textAlign: 'center', marginTop: 12 }}>Don&apos;t want to wait? The quick episode uses a simpler story.</T>}
+    </Shell>
+  );
+}
+
 export default function Listen() {
   const { words, episode, episodeLoading, topic } = useLesson();
   const lessons = useProgress((p) => p.stats.lessons);
+  const installId = useProgress((p) => p.installId);
+  const [natural, setNatural] = useState(cloudVoices());
   const [idx, setIdx] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [finished, setFinished] = useState(false);
   const [rate, setRate] = useState(1);
   const [showT, setShowT] = useState(false);
+  const [audioFailed, setAudioFailed] = useState(false);
+  const [soundCheck, setSoundCheck] = useState(false);
   const [heard, setHeard] = useState<string[]>([]);
   const live = useRef({ idx: 0, playing: false, rate: 1 });
 
   useEffect(() => { if (!episode && !episodeLoading) prefetchEpisode(); }, [episode, episodeLoading]);
+  // Get the first lines ready before the learner presses play.
+  useEffect(() => { if (episode) prefetchLines(episode.lines, 0, installId); }, [episode, installId]);
   useEffect(() => () => { live.current.playing = false; stopSpeaking(); }, []);
 
   const playRef = useRef<(i: number) => void>(() => {});
@@ -50,16 +110,28 @@ export default function Listen() {
     setIdx(i);
     const ids = wordsInLine(lines[i].t, words);
     if (ids.length) setHeard((h) => Array.from(new Set([...h, ...ids])));
-    speak(lines[i].t, {
+    const rate = (lines[i].slow ? 0.8 : 1) * live.current.rate;
+    const next = () => { if (live.current.playing && live.current.idx === i) playRef.current(i + 1); };
+    const deviceVoice = () => speak(lines[i].t, {
       host: lines[i].sp,
-      rate: (lines[i].slow ? 0.8 : 1) * live.current.rate,
-      onEnd: () => { if (live.current.playing && live.current.idx === i) playRef.current(i + 1); },
+      rate,
+      onEnd: next,
+      // Speech could not play: stop and explain, instead of racing through every line in silence.
+      onFail: () => { live.current.playing = false; setPlaying(false); setAudioFailed(true); setShowT(true); },
     });
+    if (cloudVoices()) {
+      // Natural voices from the server; the phone's own voice only if this line cannot play.
+      prefetchLines(lines, i + 1, installId);
+      playLine(lines[i].t, lines[i].sp, rate, installId, { onEnd: next, onFail: () => { setNatural(false); deviceVoice(); } });
+    } else {
+      deviceVoice();
+    }
   };
   useEffect(() => { playRef.current = playFrom; });
 
   const toggle = () => {
     if (!episode) return;
+    setAudioFailed(false);
     if (playing) { live.current.playing = false; setPlaying(false); stopSpeaking(); return; }
     live.current.playing = true;
     setPlaying(true);
@@ -79,17 +151,7 @@ export default function Listen() {
 
   const toQuiz = () => { live.current.playing = false; stopSpeaking(); useLesson.setState({ step: 'quiz' }); };
 
-  if (!episode) {
-    return (
-      <Shell progress={0.72}>
-        <View style={{ alignItems: 'center', gap: 12, paddingTop: 60 }}>
-          <ActivityIndicator size="large" color={C.coral} />
-          <T v="h3">Writing your podcast…</T>
-          <T muted style={{ textAlign: 'center' }}>Mia and Leo are preparing an episode with all of your words.</T>
-        </View>
-      </Shell>
-    );
-  }
+  if (!episode) return <EpisodeLoading words={words} />;
 
   const total = episodeSeconds(episode.lines, episode.lines.length, rate);
   const elapsed = episodeSeconds(episode.lines, idx, rate);
@@ -98,7 +160,7 @@ export default function Listen() {
       <View>
         <T v="eyebrow">Step 3 · Listening</T>
         <T v="h2" accessibilityRole="header" style={{ marginTop: 6 }}>Your mini podcast</T>
-        <T muted style={{ marginTop: 6 }}>Listen for your {words.length} words. Each one lights up when you hear it.</T>
+        <T muted style={{ marginTop: 6 }}>Mia and Leo chat about everyday life, and your {words.length} words are hidden in the conversation. Each one lights up when you hear it.</T>
       </View>
       <View style={{ backgroundColor: C.ink, borderRadius: 24, padding: 20, minHeight: 170, justifyContent: 'flex-end', overflow: 'hidden' }}>
         <View style={{ position: 'absolute', right: 20, top: 22, flexDirection: 'row', gap: 6, alignItems: 'center', height: 80 }} accessibilityElementsHidden>
@@ -108,6 +170,14 @@ export default function Listen() {
         <Text style={{ fontFamily: F.display, fontSize: 24, lineHeight: 28, color: C.white }}>{PODCAST_NAME}:{'\n'}{episode.title}</Text>
         <Text style={{ fontFamily: F.bodySemi, color: '#D9DAE8' }}>with Mia and Leo · {fmtTime(total)}</Text>
       </View>
+      {audioFailed && (
+        <View accessibilityRole="alert" style={{ backgroundColor: C.badTint, borderRadius: 16, padding: 12, gap: 4 }}>
+          <T v="bodyBold" style={{ color: '#8A1C16' }}>{"The audio didn't play on this device."}</T>
+          <T v="small" style={{ color: C.ink }}>Check that your volume is up and your phone is not on silent, then tap play again. If it still does not play, read along with the transcript below, or try another browser such as Chrome or Edge.</T>
+          <T v="zh" muted style={{ fontSize: 13.5 }}>無法播放聲音。請確認音量已打開、手機沒有靜音，再按一次播放。如果還是沒有聲音，可以先看下方的逐字稿。</T>
+          <Button small kind="secondary" title="Run a sound check" icon="vol" onPress={() => setSoundCheck(true)} style={{ marginTop: 6 }} />
+        </View>
+      )}
       <Card style={{ gap: 8 }}>
         <View style={{ height: 8, borderRadius: 999, backgroundColor: C.track, overflow: 'hidden' }}>
           <View style={{ width: `${(idx / episode.lines.length) * 100}%`, height: '100%', backgroundColor: C.coral }} />
@@ -136,6 +206,8 @@ export default function Listen() {
           {words.map((w) => <Chip key={w.id} text={w.w} on={heard.includes(w.id)} icon={heard.includes(w.id) ? 'check' : undefined} />)}
         </View>
       </View>
+      <LinkButton title="Can't hear anything? Run a sound check" icon="vol" onPress={() => setSoundCheck(true)} />
+      <SoundCheck visible={soundCheck} onClose={() => setSoundCheck(false)} />
       <Button kind="secondary" title={showT ? 'Hide transcript' : 'Show transcript'} onPress={() => setShowT(!showT)} />
       {showT && (
         <Card style={{ padding: 10, gap: 2 }}>
@@ -147,7 +219,7 @@ export default function Listen() {
           ))}
         </Card>
       )}
-      <T v="small" style={{ textAlign: 'center' }}>{episode.source === 'claude' ? 'Episode written by Claude for this lesson.' : 'Offline episode (template).'}{topic === 'mywords' ? ' Review lesson.' : ''}</T>
+      <T v="small" style={{ textAlign: 'center' }}>{episode.source === 'claude' ? 'Episode written by Claude for this lesson.' : 'Offline episode (template).'}{natural && cloudVoices() ? ' Natural voices by OpenAI.' : ' Read by your device.'}{topic === 'mywords' ? ' Review lesson.' : ''}</T>
     </Shell>
   );
 }

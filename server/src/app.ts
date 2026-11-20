@@ -3,20 +3,23 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { type Ai, AiUnavailable } from './claude';
-import { EpisodeRequest, FeedbackRequest, ReportRequest } from './schemas';
+import { EpisodeRequest, FeedbackRequest, ReportRequest, SpeechRequest } from './schemas';
+import { type Tts, TtsUnavailable } from './tts';
 import { DailyLimiter, type ReportStore } from './store';
 
 export interface Deps {
   ai: Ai;
   reports: ReportStore;
+  /** Podcast voices. Without it, the app reads the podcast with the phone's own voices. */
+  tts?: Tts;
   limiter?: DailyLimiter;
   adminToken?: string;
   /** Allowed web origins for CORS. Native apps do not send an Origin header. */
   origins?: string[];
 }
 
-// Beta limits: 10 lessons a day is about 10 episodes and 100 feedback checks.
-export const DEFAULT_LIMITS = { feedback: 150, episode: 12, report: 100 };
+// Beta limits: 10 lessons a day is about 10 episodes and 100 feedback checks. An episode has about 50 to 70 lines to voice.
+export const DEFAULT_LIMITS = { feedback: 150, episode: 12, report: 100, speech: 900 };
 
 const csvCell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
@@ -48,7 +51,37 @@ export function createApp(deps: Deps) {
     const body = EpisodeRequest.safeParse(await c.req.json().catch(() => null));
     if (!body.success) return c.json({ error: 'invalid request' }, 400);
     if (!limiter.allow(id, 'episode')) return c.json({ error: 'daily limit reached' }, 429);
-    return handleAi(c, () => deps.ai.episode(body.data));
+    return handleAi(c, async () => {
+      const ep = await deps.ai.episode(body.data);
+      // Start voicing the episode now, in order, so the audio is ready when the learner presses play.
+      if (deps.tts) for (const l of ep.lines) deps.tts.speak(l.text, l.speaker).catch(() => {});
+      return ep;
+    });
+  });
+
+  /** Audio for one podcast line. Returns a URL to the MP3, which is made once and then cached. */
+  app.post('/v1/speech', async (c) => {
+    const id = installId(c);
+    if (!id) return c.json({ error: 'missing install id' }, 400);
+    if (!deps.tts) return c.json({ error: 'voices not configured' }, 503);
+    const body = SpeechRequest.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: 'invalid request' }, 400);
+    if (!limiter.allow(id, 'speech')) return c.json({ error: 'daily limit reached' }, 429);
+    try {
+      const clip = await deps.tts.speak(body.data.text, body.data.speaker);
+      return c.json({ url: `/v1/audio/${clip}.mp3` });
+    } catch (e) {
+      console.warn('speech unavailable:', e instanceof TtsUnavailable ? e.message : e);
+      return c.json({ error: 'unavailable' }, 503);
+    }
+  });
+
+  /** The MP3 files. The name is a hash of the line, so it cannot be guessed. */
+  app.get('/v1/audio/:file', async (c) => {
+    const clip = c.req.param('file').replace(/\.mp3$/, '');
+    const mp3 = deps.tts ? await deps.tts.read(clip) : null;
+    if (!mp3) return c.json({ error: 'not found' }, 404);
+    return c.body(new Uint8Array(mp3), 200, { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'public, max-age=31536000, immutable' });
   });
 
   app.post('/v1/report', async (c) => {

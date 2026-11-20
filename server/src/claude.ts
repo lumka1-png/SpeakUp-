@@ -4,8 +4,11 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { EPISODE_SYSTEM, episodeUserMessage, FEEDBACK_SYSTEM, feedbackUserMessage } from './prompts';
 import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest, type FeedbackOutput, FeedbackOutput as FeedbackSchema, type FeedbackRequest } from './schemas';
 
-/** The model is configurable so you can compare quality and cost (for example claude-haiku-5-5). */
-export const MODEL = process.env.CLAUDE_MODEL || 'claude-opus-5-5';
+/** The model is configurable so you can compare quality and cost (for example claude-opus-5-5 for richer episodes). */
+export const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-5-5';
+
+/** The Claude API key. SPEAKUP_CLAUDE_KEY is preferred (it does not clash with other tools that read ANTHROPIC_API_KEY). */
+export const apiKey = () => process.env.SPEAKUP_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY || '';
 
 /** Thrown when Claude declines or returns output that cannot be used. The app then uses its offline fallback. */
 export class AiUnavailable extends Error {}
@@ -19,7 +22,9 @@ export function createClaudeAi(injected?: Anthropic): Ai {
   let client: Anthropic | undefined = injected;
   const getClient = () => {
     if (!client) {
-      try { client = new Anthropic({ maxRetries: 2 }); } catch (e) { throw new AiUnavailable(`Claude client not configured: ${(e as Error).message}`); }
+      const key = apiKey();
+      if (!key) throw new AiUnavailable('no Claude API key (set SPEAKUP_CLAUDE_KEY)');
+      try { client = new Anthropic({ apiKey: key, maxRetries: 2 }); } catch (e) { throw new AiUnavailable(`Claude client not configured: ${(e as Error).message}`); }
     }
     return client;
   };
@@ -57,6 +62,7 @@ export function cleanEpisode(out: EpisodeOutput, req: EpisodeRequest): EpisodeOu
   if (lines.length < 10 || quiz.length < 3) throw new AiUnavailable('episode failed validation');
   const text = lines.map((l) => l.text.toLowerCase()).join(' ');
   const missing = req.words.filter((w) => !text.includes(w.w.toLowerCase().split(' ')[0]));
-  if (missing.length > 2) throw new AiUnavailable(`episode is missing words: ${missing.map((w) => w.w).join(', ')}`);
+  // Allow one missing word per five (the podcast hides words in natural talk, but every word should be there).
+  if (missing.length > Math.floor(req.words.length / 5)) throw new AiUnavailable(`episode is missing words: ${missing.map((w) => w.w).join(', ')}`);
   return { title: out.title, lines, quiz };
 }

@@ -19,6 +19,12 @@ export const EpisodeRequest = z.object({
 });
 export type EpisodeRequest = z.infer<typeof EpisodeRequest>;
 
+export const SpeechRequest = z.object({
+  speaker: z.enum(['Mia', 'Leo']),
+  text: z.string().trim().min(1).max(600),
+});
+export type SpeechRequest = z.infer<typeof SpeechRequest>;
+
 export const ReportRequest = z.object({
   wordId: z.string().min(1).max(60),
   word: z.string().min(1).max(60),
@@ -32,7 +38,10 @@ export type ReportRequest = z.infer<typeof ReportRequest>;
 
 /* ---------- What Claude returns (structured output) ---------- */
 export const FeedbackOutput = z.object({
-  usedTargetWordCorrectly: z.boolean().describe('True if the sentence uses the target word (any form) with the right meaning.'),
+  usedTargetWord: z.boolean().describe('True if the sentence contains the target word in any form (postponed, applying, refunds).'),
+  meaningCorrect: z.boolean().describe('True only if the target word is used with the given meaning and part of speech AND the sentence makes sense. False for grammatical sentences that use the word with a wrong meaning, in a way that makes no sense, or that do not show what the word means.'),
+  meaningExplanation: z.string().describe('If meaningCorrect is false: one or two short sentences in simple English saying what the word really means and how the sentence misuses it, with a short correct example. Empty string if meaningCorrect is true.'),
+  meaningExplanationZh: z.string().describe('The same meaning explanation in Traditional Chinese, Taiwan usage. Empty string if meaningCorrect is true.'),
   grammarScore: z.number().describe('0 to 100. 100 = no errors. Minus about 10 to 15 per real error. Do not deduct for style.'),
   issues: z.array(z.object({
     explanation: z.string().describe('One short sentence in simple English, at the learner level.'),

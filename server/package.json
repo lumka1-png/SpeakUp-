@@ -4,7 +4,8 @@
   "description": "SpeakUp! API: Claude speaking feedback, podcast episodes, and word reports",
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
-    "start": "tsx --env-file-if-exists=.env src/index.ts",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist/server.js --log-level=warning",
+    "start": "node dist/server.js",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc"
   },
@@ -12,13 +13,17 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",
     "@hono/node-server": "^2.1.9",
+    "esbuild": "^0.25.12",
     "hono": "^4.13.19",
+    "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=20.12"
+  }
 }

@@ -52,12 +52,39 @@ export default function Done() {
   }, []);
   if (!result) return null;
 
-  const bar = (label: string, v: number, color: string) => (
+  const bar = (label: string, v: number | undefined, color: string) => (
     <View style={{ gap: 5 }}>
-      <Row style={{ justifyContent: 'space-between' }}><T v="bodyBold" style={{ fontSize: 14 }}>{label}</T><T v="bodyBold" style={{ fontSize: 14 }}>{v}%</T></Row>
-      <Meter value={v} color={color} />
+      <Row style={{ justifyContent: 'space-between' }}><T v="bodyBold" style={{ fontSize: 14 }}>{label}</T><T v="bodyBold" style={{ fontSize: 14 }}>{v == null ? 'Skipped' : `${v}%`}</T></Row>
+      <Meter value={v ?? 0} color={color} />
     </View>
   );
+  const pct = (v: number | undefined) => (v == null ? 'skipped' : `${v}%`);
+
+  const footer = (
+    <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 + insets.bottom, gap: 10, borderTopWidth: 2, borderTopColor: C.line }}>
+      <Button title="Next lesson" iconRight="right" onPress={() => start()} />
+      <Button kind="secondary" title="Back to home" onPress={() => { quit(); if (router.canGoBack()) router.back(); else router.replace('/'); }} />
+    </View>
+  );
+
+  if (result.skippedAll) {
+    return (
+      <Screen>
+        <ScrollView contentContainerStyle={[s.scroll, { alignItems: 'stretch', paddingTop: 24 }]}>
+          <View style={{ alignItems: 'center', gap: 12 }}>
+            <T v="eyebrow">Lesson ended</T>
+            <T v="h2" accessibilityRole="header" style={{ textAlign: 'center' }}>You skipped every part this time</T>
+            <T muted style={{ textAlign: 'center' }}>{"No score this time. Your words are saved in My Words, so you can practice them whenever you're ready."}</T>
+          </View>
+          <Card style={{ gap: 8 }}>
+            <T v="h3">{practice ? 'Words in this review' : 'Saved to My Words'}</T>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{words.map((w) => <Chip key={w.id} on text={w.w} />)}</View>
+          </Card>
+        </ScrollView>
+        {footer}
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -78,9 +105,10 @@ export default function Done() {
         <Card style={{ gap: 12 }}>
           <T v="h3">Your scores</T>
           {bar('Vocabulary', result.vocab, C.teal)}
-          <T v="small" style={{ marginTop: -6 }}>Chinese meaning {scores.g1}% · Match {scores.g2}% · Quick Think {scores.g3}%</T>
-          {bar('Speaking', scores.speak ?? 0, C.coral)}
-          {bar('Listening', scores.listen ?? 0, C.violet)}
+          <T v="small" style={{ marginTop: -6 }}>Chinese meaning {pct(scores.g1)} · Match {pct(scores.g2)} · Quick Think {pct(scores.g3)}</T>
+          {bar('Speaking', scores.speak, C.coral)}
+          {bar('Listening', scores.listen, C.violet)}
+          {[result.vocab, scores.speak, scores.listen].some((v) => v == null) && <T v="small">Your lesson score counts only the parts you did.</T>}
         </Card>
         <Card style={{ gap: 8 }}>
           <T v="h3">{practice ? 'Words you reviewed' : 'Saved to My Words'}</T>
@@ -89,10 +117,7 @@ export default function Done() {
           </View>
         </Card>
       </ScrollView>
-      <View style={{ paddingHorizontal: 20, paddingTop: 12, paddingBottom: 14 + insets.bottom, gap: 10, borderTopWidth: 2, borderTopColor: C.line }}>
-        <Button title="Next lesson" iconRight="right" onPress={() => start()} />
-        <Button kind="secondary" title="Back to home" onPress={() => { quit(); if (router.canGoBack()) router.back(); else router.replace('/'); }} />
-      </View>
+      {footer}
       {result.stars > 0 && !reduceMotion && <Confetti />}
     </Screen>
   );

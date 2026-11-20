@@ -16,6 +16,10 @@ export interface Feedback {
   natural?: string;
   issues: Issue[];
   usedWord: boolean;
+  /** false when the word is used with the wrong meaning; undefined when meaning was not checked (offline). */
+  meaningOk?: boolean;
+  /** Why the meaning is wrong, when meaningOk is false. */
+  meaningNote?: Issue;
   grammarScore: number;
   /** null when the sentence was typed, so pronunciation was not measured. */
   pronScore: number | null;

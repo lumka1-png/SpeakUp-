@@ -1,7 +1,7 @@
 # SpeakUp!
 
 An English practice app for learners in Taiwan. Each lesson has three parts:
-**Vocabulary** (choose 10 words, then play 3 games), **Speaking** (say a sentence with
+**Vocabulary** (choose 5 words, then play 3 games), **Speaking** (say a sentence with
 each word and get feedback), and **Listening** (a 5-minute podcast with a quiz).
 
 * `app/`: the iOS, Android, and web app (Expo SDK 58, React Native, TypeScript)
@@ -44,6 +44,21 @@ npx eas-cli@latest build --profile development --platform ios
 Use `--platform android` for Android. The web version records voice in Chrome, Edge,
 and Safari.
 
+### Podcast voices
+
+With `SPEAKUP_OPENAI_KEY` set in `server/.env`, the server voices each podcast line with
+OpenAI's natural voices (Mia: Marin, Leo: Cedar). Clips are saved in `AUDIO_DIR` and reused, so
+a line is only paid for once (about US$0.05 to $0.08 per episode). Give the host a persistent
+disk for this folder.
+
+Without the key, or offline, the podcast is read aloud by the voices built into each device, and the app picks the
+most natural ones available (Microsoft "Natural" voices in Edge, Apple "Premium" and
+"Enhanced" voices, Google voices in Chrome and on Android). For the best sound:
+
+* **Windows, Mac, or Android web:** use **Microsoft Edge**, which has natural-sounding online voices.
+* **iPhone, iPad, or Mac:** download a better voice in **Settings > Accessibility > Spoken Content >
+  Voices > English**, for example "Ava (Premium)" and "Evan (Enhanced)".
+
 ## Run the server
 
 ```bash
@@ -58,7 +73,7 @@ npm install
 cp .env.example .env
 ```
 
-Put your Claude API key in `.env` (`ANTHROPIC_API_KEY=...`), then:
+Put your Claude API key in `.env` (`SPEAKUP_CLAUDE_KEY=...`; `ANTHROPIC_API_KEY` also works), then:
 
 ```bash
 npm run dev
@@ -76,22 +91,26 @@ Restart `npx expo start` after changing `.env`.
 ### Server endpoints
 
 * `POST /v1/feedback`: grammar and pronunciation feedback for one sentence
-* `POST /v1/episode`: a podcast script and 5 quiz questions for 10 words
+* `POST /v1/episode`: a podcast script and 5 quiz questions for the lesson's words
+* `POST /v1/speech`: audio for one podcast line (OpenAI voices), returned as a URL to an MP3
+* `GET /v1/audio/<id>.mp3`: the saved audio clips
 * `POST /v1/report`: stores a beta tester's word report
 * `GET /admin/reports.csv`: reports grouped by word, most reported first
   (send `Authorization: Bearer YOUR_ADMIN_TOKEN`; opens in Excel or Google Sheets)
 
-Each install is limited per day (150 feedback checks, 12 episodes, 100 reports) to
-protect your API budget. Change `DEFAULT_LIMITS` in `server/src/app.ts`.
+Each install is limited per day (150 feedback checks, 12 episodes, 900 podcast lines,
+100 reports) to protect your API budget. Change `DEFAULT_LIMITS` in `server/src/app.ts`.
 
-The model defaults to `claude-opus-5-5`. To compare cost and quality, set
-`CLAUDE_MODEL=claude-haiku-5-5` in `.env` (see SPEC.md, section 15).
+The model defaults to `claude-haiku-5-5` (fast and low cost). For richer episodes, set
+`CLAUDE_MODEL=claude-opus-5-5` in `.env` (see SPEC.md, section 15). Episodes take
+about 25 to 45 seconds to write with either model; the Listening screen shows a
+progress message and offers a quick offline episode after 20 seconds.
 
 ### Deploy the server
 
 Any Node.js host works (for example Render, Railway, Fly.io, or a small VPS). Set the
-environment variables from `.env.example` in the host's dashboard, and use
-`npm start` as the start command. Reports are saved to a file, so give the host a
+environment variables from `.env.example` in the host's dashboard, use `npm run build` as
+the build command and `npm start` (which runs `dist/server.js`) as the start command. Reports are saved to a file, so give the host a
 persistent disk, or move reports to a database before a large beta.
 
 ## Checks
@@ -105,6 +124,11 @@ cd server && npm run typecheck && npm test
 ```
 
 ## Release the beta
+
+**As a web app (no app stores or developer accounts):** follow [DEPLOY-WEB.md](DEPLOY-WEB.md).
+Both the server and the app run on Hostinger web hosting (Business plan or higher).
+
+**As phone apps (later):**
 
 1. Create a free account at expo.dev, then run `npx eas-cli@latest init` in `app/`.
 2. **iOS (TestFlight):** needs an Apple Developer account (US$99 a year).

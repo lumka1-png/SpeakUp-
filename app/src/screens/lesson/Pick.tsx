@@ -6,7 +6,7 @@ import { Button, Icon, IconButton, Note, Row, T } from '../../components/ui';
 import { LEVELS, topicName, type Word } from '../../data/words';
 import { tap } from '../../lib/haptics';
 import { speak } from '../../lib/speech';
-import { neededCount, useLesson } from '../../store/lesson';
+import { LESSON_SIZE, neededCount, useLesson } from '../../store/lesson';
 import { useProgress } from '../../store/progress';
 import { useUi } from '../../store/ui';
 import { C, F } from '../../theme';
@@ -50,8 +50,8 @@ export default function Pick() {
     return (
       <Shell progress={0.02} footer={<Button title="Choose another topic" onPress={() => { useLesson.getState().quit(); router.back(); }} />}>
         <T v="eyebrow">Step 1 · Vocabulary</T>
-        <T v="h2">{"You've learned this list!"}</T>
-        <T muted>Only {pool.length} words are left in {topicName(topic)}. Choose another topic or level, or practice from My Words.</T>
+        <T v="h2">{`You've learned the ${LEVELS[level].name} words in ${topicName(topic)}!`}</T>
+        <T muted>{pool.length ? `Only ${pool.length} ${LEVELS[level].name} word${pool.length > 1 ? 's are' : ' is'} left here.` : 'There are no new words left at your level here.'} Choose another topic, move up a level on the home screen, or review your words in My Words.</T>
       </Shell>
     );
   }
@@ -72,7 +72,8 @@ export default function Pick() {
           {topicName(topic)}{random ? ' (random)' : ''} · {LEVELS[level].name}. Pick words that are new or that you want to practice. They move to My Words.
         </T>
       </View>
-      {pool.length < 10 && <Note>{`Only ${pool.length} words are left in this list, so this lesson will use ${need}.`}</Note>}
+      <T v="small">After you choose, you can tap Vocabulary, Speaking, or Listening at the top to jump to that part, or skip any exercise.</T>
+      {pool.length < LESSON_SIZE && <Note>{`Only ${pool.length} words are left in this list, so this lesson will use ${need}.`}</Note>}
       <Row gap={8} style={{ flexWrap: 'wrap' }}>
         <Button small kind="secondary" icon="shuffle" title="Auto-pick" onPress={autoPick} disabled={n >= need} />
         <Button small kind="secondary" title={`中 ${showZh ? 'Hide' : 'Show'} Chinese`} onPress={() => setShowZh(!showZh)} />

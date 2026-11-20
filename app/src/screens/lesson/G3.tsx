@@ -9,7 +9,7 @@ import { useLesson } from '../../store/lesson';
 import { C, F } from '../../theme';
 import { Shell } from './Shell';
 
-const SECONDS = 45;
+const SECONDS = 20;
 interface Item { w: Word; shown: Word; truth: boolean; mode: 'def' | 'zh' }
 
 function makeItem(words: Word[]): Item {
