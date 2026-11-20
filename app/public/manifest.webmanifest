@@ -1,0 +1,17 @@
+{
+  "name": "SpeakUp! English practice",
+  "short_name": "SpeakUp!",
+  "description": "Learn English words, say them out loud, and hear them in a short podcast.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFF9F2",
+  "theme_color": "#FFF9F2",
+  "lang": "en",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

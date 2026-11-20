@@ -1,0 +1,25 @@
+# SpeakUp! web app settings for Apache and LiteSpeed hosting (cPanel and most file-based hosts).
+
+# Always use HTTPS: browsers only allow the microphone on secure sites.
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Pages like /words or /lesson are handled by the app, so send them to index.html.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+AddType application/manifest+json .webmanifest
+
+<IfModule mod_headers.c>
+  # Built files have a fingerprint in their name, so browsers can keep them for a year.
+  <FilesMatch "\.(js|css|ttf|woff2?|png|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  # Always check for a new version of the app itself.
+  <FilesMatch "(index\.html|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

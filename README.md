@@ -125,6 +125,11 @@ cd server && npm run typecheck && npm test
 
 ## Release the beta
 
+**As a web app (no app stores or developer accounts):** follow [DEPLOY-WEB.md](DEPLOY-WEB.md).
+The server goes on Render (`render.yaml` sets it up) and the app files go on your own website.
+
+**As phone apps (later):**
+
 1. Create a free account at expo.dev, then run `npx eas-cli@latest init` in `app/`.
 2. **iOS (TestFlight):** needs an Apple Developer account (US$99 a year).
    `npx eas-cli@latest build --platform ios`, then `npx eas-cli@latest submit --platform ios`.
