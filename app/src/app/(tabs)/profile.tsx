@@ -1,8 +1,10 @@
 import { ScrollView, View } from 'react-native';
 
+import { CreatorSection } from '@/components/Promo';
 import { Select } from '@/components/Select';
 import { Button, Card, Row, Screen, s, T } from '@/components/ui';
 import { hasServer } from '@/lib/api';
+import { SHOW_PROMOS } from '@/data/promos';
 import { LEVELS } from '@/data/words';
 import { useProgress } from '@/store/progress';
 import { useUi } from '@/store/ui';
@@ -42,6 +44,7 @@ export default function Profile() {
             </Row>
           )) : <T muted style={{ marginTop: 6 }}>Finish a lesson to see your history.</T>}
         </Card>
+        {SHOW_PROMOS && <CreatorSection />}
         <Button title="Reset my progress" kind="secondary" onPress={() => askConfirm({ title: 'Reset your progress?', body: 'This clears your level, My Words, scores, and streak on this device.', ok: 'Reset everything', onOk: reset })} />
         <T v="small" style={{ textAlign: 'center' }}>Progress is saved on this device only. {hasServer() ? 'AI feedback is on.' : 'Offline mode: feedback is rule-based.'}</T>
       </ScrollView>
