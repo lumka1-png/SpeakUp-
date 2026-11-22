@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Dimensions, Easing, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { BookCard, CoachingCard } from '../../components/Promo';
 import { Button, Card, Chip, Icon, Meter, Pill, PillText, Ring, Row, Screen, s, Star, T } from '../../components/ui';
+import { SHOW_PROMOS } from '../../data/promos';
 import { buzzGood } from '../../lib/haptics';
 import { useLesson } from '../../store/lesson';
 import { useProgress } from '../../store/progress';
@@ -43,6 +45,7 @@ export default function Done() {
   const { result, scores, words, practice, start, quit } = useLesson();
   const myWords = useProgress((p) => p.myWords);
   const streak = useProgress((p) => p.stats.streak);
+  const lessons = useProgress((p) => p.stats.lessons);
   const insets = useSafeAreaInsets();
   const [reduceMotion, setReduceMotion] = useState(true);
   const shown = useRef(false);
@@ -116,6 +119,8 @@ export default function Done() {
             {words.map((w) => <Chip key={w.id} on text={`${w.w}${myWords[w.id] ? `  ${'●'.repeat(myWords[w.id].mastery)}${'○'.repeat(3 - myWords[w.id].mastery)}` : ''}`} />)}
           </View>
         </Card>
+        {/* One promotion after each lesson, alternating between the book and coaching. */}
+        {SHOW_PROMOS ? (lessons % 2 ? <BookCard /> : <CoachingCard />) : null}
       </ScrollView>
       {footer}
       {result.stars > 0 && !reduceMotion && <Confetti />}

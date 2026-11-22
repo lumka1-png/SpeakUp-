@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 
+import { cleanKey } from './keys';
 import { EPISODE_SYSTEM, episodeUserMessage, FEEDBACK_SYSTEM, feedbackUserMessage } from './prompts';
 import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest, type FeedbackOutput, FeedbackOutput as FeedbackSchema, type FeedbackRequest } from './schemas';
 
@@ -8,7 +9,7 @@ import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest
 export const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-5-5';
 
 /** The Claude API key. SPEAKUP_CLAUDE_KEY is preferred (it does not clash with other tools that read ANTHROPIC_API_KEY). */
-export const apiKey = () => process.env.SPEAKUP_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY || '';
+export const apiKey = () => cleanKey(process.env.SPEAKUP_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY);
 
 /** Thrown when Claude declines or returns output that cannot be used. The app then uses its offline fallback. */
 export class AiUnavailable extends Error {}

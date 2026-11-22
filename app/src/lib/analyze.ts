@@ -18,6 +18,8 @@ export interface Feedback {
   usedWord: boolean;
   /** false when the word is used with the wrong meaning; undefined when meaning was not checked (offline). */
   meaningOk?: boolean;
+  /** True when the server is set up but Claude could not check this sentence, so this is the offline check. */
+  serverFailed?: boolean;
   /** Why the meaning is wrong, when meaningOk is false. */
   meaningNote?: Issue;
   grammarScore: number;

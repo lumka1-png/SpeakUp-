@@ -74,7 +74,7 @@ export async function getFeedback(p: {
       encouragement: r.encouragement,
     };
   } catch {
-    return local;
+    return { ...local, serverFailed: true };
   }
 }
 
