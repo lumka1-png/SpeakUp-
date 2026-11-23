@@ -55,7 +55,8 @@ export const useProgress = create<ProgressState>()(
         set((s) => {
           const now = Date.now();
           const myWords = { ...s.myWords };
-          words.forEach((w, k) => { myWords[w.id] = { ...w, mastery: 0, added: now + k, seen: null }; });
+          // A word already in My Words (for example one the learner typed again) keeps its progress.
+          words.forEach((w, k) => { myWords[w.id] = myWords[w.id] ?? { ...w, mastery: 0, added: now + k, seen: null }; });
           return { myWords };
         }),
       unsaveWord: (id) =>

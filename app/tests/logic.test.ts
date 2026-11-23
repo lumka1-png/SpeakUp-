@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { ALL_WORDS, getPool, TOPIC_IDS, wordsOf } from '../src/data/words';
+import { ALL_WORDS, customWord, findListWord, getPool, normalizeTyped, TOPIC_IDS, wordsOf } from '../src/data/words';
 import { checkGrammar, readBackScore, soundTips, usesWord } from '../src/lib/analyze';
 import { episodeSeconds, templateEpisode, templateQuiz } from '../src/lib/podcast';
 import { lessonScore, matchScore, nextMastery, nextStreak, quickScore, speakItemScore, starsFor } from '../src/lib/scoring';
@@ -121,4 +121,15 @@ test('template podcast and quiz use every word', () => {
     assert.equal(new Set(q.options).size, q.options.length);
     if (q.quote) assert.ok(q.quote.includes('_____'));
   }
+});
+
+test('typed words match list words and become lesson words', () => {
+  assert.equal(normalizeTyped('  Take   Into Account! '), 'take into account');
+  assert.equal(normalizeTyped('預算'), '預算');
+  assert.equal(findListWord(' Schedule ')?.w, 'schedule');
+  assert.equal(findListWord('zzzz'), undefined);
+  const w = customWord({ word: 'negotiate', pos: 'v.', zh: '協商；談判', def: 'to talk to reach an agreement', ex: 'We negotiate prices.' }, 2);
+  assert.deepEqual([w.id, w.pos, w.lvl, w.topic, w.custom], ['negotiate', 'v.', 2, 'custom', true]);
+  assert.equal(customWord({ word: 'look up', pos: '??', zh: '查', def: 'd', ex: 'e' }, 9).pos, 'phr.');
+  assert.equal(customWord({ word: 'look up', pos: '??', zh: '查', def: 'd', ex: 'e' }, 9).lvl, 3);
 });

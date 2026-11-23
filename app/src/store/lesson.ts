@@ -27,6 +27,8 @@ interface LessonState {
   practice: boolean;
   step: Step;
   pool: Word[];
+  /** Words the learner typed in themselves for this lesson. */
+  custom: Word[];
   selected: string[];
   words: Word[];
   scores: Partial<Scores>;
@@ -39,6 +41,8 @@ interface LessonState {
   start: (practiceWords?: Word[]) => void;
   toggle: (id: string) => void;
   autoPick: () => void;
+  /** Adds a word the learner typed and selects it. Returns what happened so the screen can say so. */
+  addCustom: (w: Word) => 'added' | 'selected' | 'already' | 'full';
   confirmPick: () => void;
   finishG1: (correctIds: string[]) => void;
   finishG2: (mistakes: number, missesById: Record<string, number>) => void;
@@ -57,9 +61,11 @@ interface LessonState {
 /** Words per lesson. */
 export const LESSON_SIZE = 5;
 export const neededCount = (poolSize: number) => Math.min(LESSON_SIZE, poolSize);
+/** Words on offer: the list words plus any the learner typed in. */
+const offered = (s: { pool: Word[]; custom: Word[] }) => s.pool.length + s.custom.length;
 
 export const useLesson = create<LessonState>()((set, get) => ({
-  active: false, topic: 'toeic', random: false, practice: false, step: 'pick', pool: [], selected: [], words: [],
+  active: false, topic: 'toeic', random: false, practice: false, step: 'pick', pool: [], custom: [], selected: [], words: [],
   scores: {}, perf: {}, inter: null, spoken: [], episode: null, episodeLoading: false, result: null,
 
   start: (practiceWords) => {
@@ -68,7 +74,7 @@ export const useLesson = create<LessonState>()((set, get) => ({
     // Random: choose among topics that still have a full lesson of words at the learner's level.
     const open = TOPIC_IDS.filter((t) => getPool(p.level, t, p.myWords).length >= LESSON_SIZE);
     const topic = practiceWords ? 'mywords' : random ? pick(open.length ? open : TOPIC_IDS, 1)[0] : p.topic;
-    const base = { active: true, topic, random, practice: !!practiceWords, selected: [], scores: {}, inter: null, spoken: [], episode: null, episodeLoading: false, result: null };
+    const base = { active: true, topic, random, practice: !!practiceWords, custom: [], selected: [], scores: {}, inter: null, spoken: [], episode: null, episodeLoading: false, result: null };
     if (practiceWords) {
       set({ ...base, pool: [], words: practiceWords, step: 'g1', perf: initPerf(practiceWords) });
     } else {
@@ -76,19 +82,31 @@ export const useLesson = create<LessonState>()((set, get) => ({
     }
   },
   toggle: (id) => set((s) => {
-    const need = neededCount(s.pool.length);
+    const need = neededCount(offered(s));
     if (s.selected.includes(id)) return { selected: s.selected.filter((x) => x !== id) };
     if (s.selected.length >= need) return {};
     return { selected: [...s.selected, id] };
   }),
   autoPick: () => set((s) => {
-    const need = neededCount(s.pool.length);
+    const need = neededCount(offered(s));
     const rest = s.pool.slice(0, Math.max(need, 20)).filter((w) => !s.selected.includes(w.id));
     return { selected: [...s.selected, ...pick(rest, need - s.selected.length).map((w) => w.id)] };
   }),
+  addCustom: (w) => {
+    const s = get();
+    if (s.selected.includes(w.id)) return 'already';
+    const inList = s.pool.some((x) => x.id === w.id) || s.custom.some((x) => x.id === w.id);
+    const custom = inList ? s.custom : [w, ...s.custom];
+    if (s.selected.length >= neededCount(offered({ pool: s.pool, custom }))) {
+      set({ custom });
+      return 'full';
+    }
+    set({ custom, selected: [...s.selected, w.id] });
+    return inList ? 'selected' : 'added';
+  },
   confirmPick: () => {
     const s = get();
-    const words = s.selected.map((id) => s.pool.find((w) => w.id === id)).filter((w): w is Word => !!w);
+    const words = s.selected.map((id) => s.custom.find((w) => w.id === id) ?? s.pool.find((w) => w.id === id)).filter((w): w is Word => !!w);
     useProgress.getState().saveWords(words);
     set({ words, perf: initPerf(words), step: 'g1' });
   },

@@ -1,5 +1,5 @@
 import { API_URL } from '../config';
-import type { Word } from '../data/words';
+import { customWord, type Word } from '../data/words';
 import { type Feedback, estimatePronunciation, localFeedback, soundTips } from './analyze';
 import { type Episode, type Host, type PodLine, type QuizQ, templateEpisode } from './podcast';
 import { shuffle } from './util';
@@ -105,6 +105,27 @@ export async function getEpisode(words: Word[], topic: string, topicLabel: strin
     return { title: r.title || fallback.title, lines, quiz: quiz.slice(0, 5), source: 'claude' };
   } catch {
     return fallback;
+  }
+}
+
+/* ---------------- Learner's own words ---------------- */
+
+export type LookupResult = { ok: true; word: Word } | { ok: false; msg: string; zh?: string };
+
+interface RemoteWord { found: boolean; reason: string; reasonZh: string; word: string; pos: string; zh: string; def: string; ex: string }
+
+/** Asks the server to write a dictionary entry for a word the learner typed (English, or Chinese to translate). */
+export async function lookupWord(text: string, level: number, installId: string): Promise<LookupResult> {
+  const offline = { ok: false as const, msg: "Couldn't look up this word right now. Check your internet connection and try again.", zh: '目前無法查詢這個單字，請確認網路連線後再試一次。' };
+  if (!hasServer()) return offline;
+  try {
+    const r = await post<RemoteWord>('/v1/word', { text: text.trim(), level }, installId, 25_000);
+    if (!r.found) return { ok: false, msg: r.reason || "We couldn't find that word. Check the spelling and try again.", zh: r.reasonZh || undefined };
+    if (!r.word || !r.zh || !r.def || !r.ex) return offline;
+    return { ok: true, word: customWord(r, level) };
+  } catch (e) {
+    if (/HTTP 429/.test(String(e))) return { ok: false, msg: "You've added a lot of words today. Please try again tomorrow.", zh: '你今天已新增很多單字，請明天再試。' };
+    return offline;
   }
 }
 

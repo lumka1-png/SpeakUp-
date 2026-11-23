@@ -2,8 +2,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 
 import { cleanKey } from './keys';
-import { EPISODE_SYSTEM, episodeUserMessage, FEEDBACK_SYSTEM, feedbackUserMessage } from './prompts';
-import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest, type FeedbackOutput, FeedbackOutput as FeedbackSchema, type FeedbackRequest } from './schemas';
+import { EPISODE_SYSTEM, episodeUserMessage, FEEDBACK_SYSTEM, feedbackUserMessage, WORD_SYSTEM, wordUserMessage } from './prompts';
+import { type EpisodeOutput, EpisodeOutput as EpisodeSchema, type EpisodeRequest, type FeedbackOutput, FeedbackOutput as FeedbackSchema, type FeedbackRequest, type WordOutput, WordOutput as WordSchema, type WordRequest } from './schemas';
 
 /** The model is configurable so you can compare quality and cost (for example claude-opus-5-5 for richer episodes). */
 export const MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-5-5';
@@ -17,6 +17,7 @@ export class AiUnavailable extends Error {}
 export interface Ai {
   feedback(req: FeedbackRequest): Promise<FeedbackOutput>;
   episode(req: EpisodeRequest): Promise<EpisodeOutput>;
+  word(req: WordRequest): Promise<WordOutput>;
 }
 
 export function createClaudeAi(injected?: Anthropic): Ai {
@@ -53,6 +54,7 @@ export function createClaudeAi(injected?: Anthropic): Ai {
       const out = await run<EpisodeOutput>(EPISODE_SYSTEM, episodeUserMessage(req), betaZodOutputFormat(EpisodeSchema), 'medium', 16000, 120_000);
       return cleanEpisode(out, req);
     },
+    word: async (req) => cleanWord(await run<WordOutput>(WORD_SYSTEM, wordUserMessage(req), betaZodOutputFormat(WordSchema), 'low', 2000, 25_000)),
   };
 }
 
@@ -66,4 +68,15 @@ export function cleanEpisode(out: EpisodeOutput, req: EpisodeRequest): EpisodeOu
   // Allow one missing word per five (the podcast hides words in natural talk, but every word should be there).
   if (missing.length > Math.floor(req.words.length / 5)) throw new AiUnavailable(`episode is missing words: ${missing.map((w) => w.w).join(', ')}`);
   return { title: out.title, lines, quiz };
+}
+
+/** Trims a looked-up word and makes sure a found word has everything the lesson games need. */
+export function cleanWord(out: WordOutput): WordOutput {
+  const t = (v: string) => (v ?? '').trim();
+  const word = { ...out, reason: t(out.reason), reasonZh: t(out.reasonZh), word: t(out.word), zh: t(out.zh), def: t(out.def), ex: t(out.ex) };
+  if (!word.found) return word;
+  // Match the app's word lists: definitions start lowercase and have no final period.
+  word.def = word.def.replace(/\.$/, '').replace(/^([A-Z])(?=[a-z])/, (c) => c.toLowerCase());
+  if (!word.word || word.word.length > 40 || !word.zh || !word.def || !word.ex) throw new AiUnavailable('word entry is incomplete');
+  return word;
 }

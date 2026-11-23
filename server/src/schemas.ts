@@ -19,6 +19,13 @@ export const EpisodeRequest = z.object({
 });
 export type EpisodeRequest = z.infer<typeof EpisodeRequest>;
 
+/** A word the learner typed themselves: English, or Chinese to translate. */
+export const WordRequest = z.object({
+  text: z.string().trim().min(1).max(40),
+  level: z.number().int().min(0).max(3),
+});
+export type WordRequest = z.infer<typeof WordRequest>;
+
 export const SpeechRequest = z.object({
   speaker: z.enum(['Mia', 'Leo']),
   text: z.string().trim().min(1).max(600),
@@ -73,3 +80,15 @@ export const EpisodeOutput = z.object({
   })).describe('Exactly 5 questions.'),
 });
 export type EpisodeOutput = z.infer<typeof EpisodeOutput>;
+
+export const WordOutput = z.object({
+  found: z.boolean().describe('True if the input is a real English word or common short phrase (or a Chinese word with a clear English equivalent) that is suitable for a vocabulary lesson. False for nonsense, names of people or brands, long sentences, or offensive words.'),
+  reason: z.string().describe('If found is false: one short, kind sentence in simple English saying why, with a suggestion if there is a likely intended word. Empty string if found is true.'),
+  reasonZh: z.string().describe('The same reason in Traditional Chinese, Taiwan usage. Empty string if found is true.'),
+  word: z.string().describe('The English word or phrase in its dictionary form (base verb, singular noun), lowercase unless it is always capitalized. Fix the spelling if it was misspelled. If the input was Chinese, the most common English word for it.'),
+  pos: z.enum(['n.', 'v.', 'adj.', 'adv.', 'phr.']).describe('Part of speech for the most common meaning. Use phr. for multi-word phrases.'),
+  zh: z.string().describe('Short Traditional Chinese meaning, Taiwan usage, like a dictionary entry (for example 預約；保留). At most 12 characters.'),
+  def: z.string().describe('A short definition in simple English at the learner level, no more than 15 words, without using the word itself.'),
+  ex: z.string().describe('One natural example sentence that uses the word with this meaning, no more than 16 words, at the learner level.'),
+});
+export type WordOutput = z.infer<typeof WordOutput>;

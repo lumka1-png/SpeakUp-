@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { createApp } from '../src/app';
-import { AiUnavailable, cleanEpisode, type Ai } from '../src/claude';
+import { AiUnavailable, cleanEpisode, cleanWord, type Ai } from '../src/claude';
 import type { EpisodeOutput } from '../src/schemas';
 import { DailyLimiter, memoryReportStore } from '../src/store';
 import { createOpenAiTts } from '../src/tts';
@@ -14,7 +14,8 @@ import { join } from 'node:path';
 
 const ID = 'abc123-test';
 const fakeFeedback = { usedTargetWord: true, meaningCorrect: true, meaningExplanation: '', meaningExplanationZh: '', grammarScore: 90, issues: [], correctedSentence: 'Hi.', naturalVersion: 'Hi.', suspectedMispronunciations: [], encouragement: 'Nice!' };
-const fakeAi = (over: Partial<Ai> = {}): Ai => ({ feedback: async () => fakeFeedback, episode: async () => ({ title: 't', lines: [], quiz: [] }), ...over });
+const fakeWord = { found: true, reason: '', reasonZh: '', word: 'negotiate', pos: 'v.' as const, zh: '談判；協商', def: 'to talk to reach an agreement', ex: 'We need to negotiate a better price.' };
+const fakeAi = (over: Partial<Ai> = {}): Ai => ({ feedback: async () => fakeFeedback, episode: async () => ({ title: 't', lines: [], quiz: [] }), word: async () => fakeWord, ...over });
 const post = (app: ReturnType<typeof createApp>, path: string, body: unknown, id: string | null = ID) =>
   app.request(path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(id ? { 'X-Install-Id': id } : {}) }, body: JSON.stringify(body) });
 const fb = { word: { w: 'refund', pos: 'n.', def: 'money given back' }, transcript: 'I want a refund.', confidence: 0.9, viaMic: true, level: 1 };
@@ -138,4 +139,29 @@ test('admin status needs the token and explains a rejected key', async () => {
   assert.equal(st.ok, false);
   assert.ok(!JSON.stringify(st).includes('test-key-1234'), 'keys are never shown in full');
   delete process.env.SPEAKUP_CLAUDE_KEY; delete process.env.SPEAKUP_OPENAI_KEY; delete process.env.AUDIO_DIR;
+});
+
+test('word lookup validates input and returns the entry', async () => {
+  const app = createApp({ ai: fakeAi(), reports: memoryReportStore() });
+  assert.equal((await post(app, '/v1/word', { text: 'negotiate', level: 1 }, null)).status, 400);
+  assert.equal((await post(app, '/v1/word', { text: '   ', level: 1 })).status, 400);
+  assert.equal((await post(app, '/v1/word', { text: 'x'.repeat(41), level: 1 })).status, 400);
+  const ok = await post(app, '/v1/word', { text: 'negociate', level: 1 });
+  assert.equal(ok.status, 200);
+  assert.deepEqual(await ok.json(), fakeWord);
+});
+
+test('word lookup has its own daily limit', async () => {
+  const app = createApp({ ai: fakeAi(), reports: memoryReportStore(), limiter: new DailyLimiter({ word: 1 }) });
+  assert.equal((await post(app, '/v1/word', { text: 'hello', level: 0 })).status, 200);
+  assert.equal((await post(app, '/v1/word', { text: 'hello', level: 0 })).status, 429);
+});
+
+test('word cleanup trims fields and rejects incomplete entries', () => {
+  assert.equal(cleanWord({ ...fakeWord, word: '  negotiate ' }).word, 'negotiate');
+  assert.equal(cleanWord({ ...fakeWord, def: 'To talk to reach an agreement.' }).def, 'to talk to reach an agreement');
+  assert.equal(cleanWord({ ...fakeWord, def: 'TV news' }).def, 'TV news');
+  assert.throws(() => cleanWord({ ...fakeWord, zh: '' }), AiUnavailable);
+  const notFound = { ...fakeWord, found: false, reason: ' Not a word. ', word: '', zh: '', def: '', ex: '' };
+  assert.equal(cleanWord(notFound).reason, 'Not a word.');
 });

@@ -12,6 +12,8 @@ export interface Word {
   ex: string;
   lvl: Level;
   topic: string;
+  /** Added by the learner, with its entry written by Claude. */
+  custom?: boolean;
 }
 
 export const LEVELS = [
@@ -60,4 +62,21 @@ export function topicColor(id: string): string {
 /** Words at the learner's level that they have not saved yet. Lessons never mix in other levels. */
 export function getPool(level: number, topic: string, saved: Record<string, unknown>): Word[] {
   return wordsOf(topic).filter((w) => w.lvl === level && !saved[w.id]);
+}
+
+/** Turns what the learner typed into a word id: lowercase, single spaces, no outer punctuation. */
+export function normalizeTyped(text: string): string {
+  return text.trim().toLowerCase().replace(/\s+/g, ' ').replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+}
+
+/** A word the learner typed that is already in one of the app's lists. */
+export function findListWord(text: string): Word | undefined {
+  const id = normalizeTyped(text);
+  return id ? findWord(id) : undefined;
+}
+
+/** Builds a lesson word from a dictionary entry the server looked up. */
+export function customWord(e: { word: string; pos: string; zh: string; def: string; ex: string }, level: number): Word {
+  const pos = (['n.', 'v.', 'adj.', 'adv.', 'phr.'].includes(e.pos) ? e.pos : e.word.includes(' ') ? 'phr.' : 'n.') as Pos;
+  return { id: normalizeTyped(e.word), w: e.word.trim(), pos, zh: e.zh, def: e.def, ex: e.ex, lvl: Math.max(0, Math.min(3, level)) as Level, topic: 'custom', custom: true };
 }

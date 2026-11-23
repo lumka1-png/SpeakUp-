@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
 import { type Ai, AiUnavailable } from './claude';
-import { EpisodeRequest, FeedbackRequest, ReportRequest, SpeechRequest } from './schemas';
+import { EpisodeRequest, FeedbackRequest, ReportRequest, SpeechRequest, WordRequest } from './schemas';
 import { type Tts, TtsUnavailable } from './tts';
 import { DailyLimiter, type ReportStore } from './store';
 
@@ -21,7 +21,7 @@ export interface Deps {
 }
 
 // Beta limits: 10 lessons a day is about 10 episodes and 100 feedback checks. An episode has about 50 to 70 lines to voice.
-export const DEFAULT_LIMITS = { feedback: 150, episode: 12, report: 100, speech: 900 };
+export const DEFAULT_LIMITS = { feedback: 150, episode: 12, report: 100, speech: 900, word: 60 };
 
 const csvCell = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
@@ -59,6 +59,16 @@ export function createApp(deps: Deps) {
       if (deps.tts) for (const l of ep.lines) deps.tts.speak(l.text, l.speaker).catch(() => {});
       return ep;
     });
+  });
+
+  /** Looks up a word the learner typed, so it can be used in a lesson. */
+  app.post('/v1/word', async (c) => {
+    const id = installId(c);
+    if (!id) return c.json({ error: 'missing install id' }, 400);
+    const body = WordRequest.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return c.json({ error: 'invalid request' }, 400);
+    if (!limiter.allow(id, 'word')) return c.json({ error: 'daily limit reached' }, 429);
+    return handleAi(c, () => deps.ai.word(body.data));
   });
 
   /** Audio for one podcast line. Returns a URL to the MP3, which is made once and then cached. */
