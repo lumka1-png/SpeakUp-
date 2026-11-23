@@ -1,4 +1,4 @@
-import { COMING_SOON, THEME_LISTS, TOEIC_LISTS } from './wordlists';
+import { THEME_LISTS, TOEIC_LISTS } from './wordlists';
 
 export type Level = 0 | 1 | 2 | 3;
 export type Pos = 'n.' | 'v.' | 'adj.' | 'adv.' | 'phr.';
@@ -25,7 +25,6 @@ export const LEVELS = [
 
 export const THEME_IDS = Object.keys(THEME_LISTS);
 export const TOPIC_IDS = ['toeic', ...THEME_IDS];
-export { COMING_SOON };
 
 export function parseWord(s: string, lvl: number, topic: string): Word {
   const [w, pos, zh, def, ex] = s.split('|');

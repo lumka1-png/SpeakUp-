@@ -5,7 +5,7 @@ import type { IconName } from '@/components/icons';
 import { Select, type SelectOption } from '@/components/Select';
 import { BrandHeader } from '@/components/BrandHeader';
 import { Badge, Button, Card, Icon, Row, Screen, s, T } from '@/components/ui';
-import { COMING_SOON, getPool, LEVELS, THEME_IDS, topicColor, topicName } from '@/data/words';
+import { getPool, LEVELS, THEME_IDS, topicColor, topicName } from '@/data/words';
 import { useLesson } from '@/store/lesson';
 import { useProgress } from '@/store/progress';
 import { C } from '@/theme';
@@ -33,7 +33,6 @@ export default function Home() {
     { value: 'random', label: 'Random topic' },
     { value: 'toeic', label: 'TOEIC Essentials', group: 'Core list' },
     ...THEME_IDS.map((id) => ({ value: id, label: topicName(id), group: 'Themed lists' })),
-    ...COMING_SOON.map((n) => ({ value: `soon:${n}`, label: n, disabled: true, group: 'More lists coming soon' })),
   ];
 
   return (
