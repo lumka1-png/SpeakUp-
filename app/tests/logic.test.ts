@@ -8,8 +8,8 @@ import { lessonScore, matchScore, nextMastery, nextStreak, quickScore, speakItem
 import { wordRe } from '../src/lib/util';
 
 test('word data is complete and well formed', () => {
-  assert.equal(TOPIC_IDS.length, 9);
-  assert.equal(ALL_WORDS.length, 181 + 240);
+  assert.equal(TOPIC_IDS.length, 29);
+  assert.equal(ALL_WORDS.length, 181 + 240 + 800);
   // Every list needs at least 10 words per level (two 5-word lessons), and levels are 0 to 3.
   for (const t of TOPIC_IDS) for (let l = 0; l < 4; l++) {
     const n = wordsOf(t).filter((w) => w.lvl === l).length;
